@@ -1,0 +1,162 @@
+{
+  "width": 4,
+  "height": 20,
+  "board": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      "gray",
+      0,
+      0,
+      0
+    ],
+    [
+      "gray",
+      "gray",
+      0,
+      0
+    ],
+    [
+      "gray",
+      "gray",
+      "gray",
+      0
+    ],
+    [
+      "gray",
+      "gray",
+      "gray",
+      0
+    ],
+    [
+      "gray",
+      "gray",
+      "gray",
+      0
+    ]
+  ],
+  "targetMap": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    [
+      null,
+      null,
+      null,
+      true
+    ]
+  ],
+  "currentPiece": "J",
+  "currentRotation": 3,
+  "currentX": 2,
+  "currentY": 2,
+  "hold": "L",
+  "nextQueue": [],
+  "canHold": true,
+  "gameActive": true,
+  "autoRefillNext": false
+}

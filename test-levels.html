@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test LEVELS</title>
+</head>
+<body>
+  <h1>Test LEVELS Loading</h1>
+  <pre id="output"></pre>
+  
+  <script src="js/levels.js"></script>
+  <script>
+    const output = document.getElementById('output');
+    if (typeof LEVELS === 'undefined') {
+      output.textContent = 'ERROR: LEVELS is not defined!';
+    } else {
+      const keys = Object.keys(LEVELS);
+      output.textContent = `SUCCESS: LEVELS is defined\n` +
+        `Number of levels: ${keys.length}\n` +
+        `First level: ${LEVELS[1] ? 'OK' : 'Missing'}\n` +
+        `Last level: ${LEVELS[54] ? 'OK' : 'Missing'}\n` +
+        `Sample (Level 1): ${JSON.stringify(LEVELS[1], null, 2).substring(0, 200)}...`;
+    }
+  </script>
+</body>
+</html>

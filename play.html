@@ -1,0 +1,2116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Zhoumetry - Level Mode</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #eee;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#left-panel, #right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 200px;
+    flex-shrink: 0;
+}
+
+#board {
+    position: relative;
+    display: grid;
+    gap: 2px;
+    background: #000;
+    border: 3px solid #333;
+    border-radius: 8px;
+    padding: 8px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.cell {
+    width: 100%;
+    height: 100%;
+    background: #222;
+    border-radius: 2px;
+    min-width: 0;
+    min-height: 0;
+}
+
+.ghost {
+    position: absolute;
+    box-sizing: border-box;
+    background: none;
+    border-radius: 2px;
+    pointer-events: none;
+    border: 2px dashed #fff;
+}
+
+
+
+.panel-section {
+    background: #222;
+    padding: 10px;
+    border-radius: 5px;
+    min-width: 0;
+}
+
+.panel-section h3 {
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    color: #aaa;
+}
+
+.hold, .next {
+    min-height: 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mini-board {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    background: transparent;
+    margin: 0 auto;
+}
+
+.stats div {
+    margin: 3px 0;
+    font-size: 11px;
+}
+
+.control-setting {
+    margin: 10px 0;
+}
+
+.control-setting label {
+    display: block;
+    margin: 5px 0;
+    font-size: 12px;
+}
+
+.control-setting input[type="range"] {
+    width: 100%;
+}
+
+button {
+    background: #4a4;
+    color: white;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 12px;
+    width: 100%;
+    margin: 3px 0;
+}
+
+button:hover {
+    background: #5b5;
+}
+
+button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+#level-info {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    color: #4a4;
+}
+
+#target-status {
+    font-size: 14px;
+    color: #f88;
+    text-align: center;
+    margin: 10px 0;
+}
+
+.combo-display {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    font-weight: bold;
+    color: #ff0;
+    text-shadow: 2px 2px 4px #000;
+    pointer-events: none;
+    z-index: 1000;
+    animation: comboFade 1s ease-out;
+}
+
+@keyframes comboFade {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+.all-clear-effect {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 64px;
+    font-weight: bold;
+    color: #0ff;
+    text-shadow: 3px 3px 6px #000;
+    pointer-events: none;
+    z-index: 1000;
+    animation: allClearFade 2s ease-out;
+}
+
+@keyframes allClearFade {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+.level-complete-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.level-complete-box {
+    background: #222;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+.level-complete-box h2 {
+    color: #0ff;
+    font-size: 36px;
+    margin: 0 0 20px 0;
+}
+
+.level-complete-box button {
+    margin: 10px;
+    padding: 15px 30px;
+    font-size: 16px;
+}
+
+.level-select-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.level-select-box {
+    background: #222;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90vw;
+    max-width: 900px;
+    max-height: 85vh;
+    overflow: hidden;
+}
+
+.level-select-box h2 {
+    color: #4a4;
+    margin: 0 0 15px 0;
+    text-align: center;
+}
+
+.level-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.level-button {
+    padding: 6px 4px;
+    background: #333;
+    border: 2px solid #555;
+    color: #eee;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 10px;
+    min-height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.1;
+}
+
+.level-button:hover {
+    background: #444;
+    border-color: #4a4;
+}
+
+.level-button.current {
+    border-color: #4a4;
+    background: #2a4;
+}
+
+.level-button.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+</style>
+</head>
+<body>
+
+<!-- 背景音乐 -->
+<audio id="bgm" loop autoplay>
+  <source src="lib/bgm/ancients lagacy.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Left Panel: Level Info, Hold, Next -->
+<div id="left-panel">
+  <div class="panel-section">
+    <h3>Level <span id="level-number">1</span></h3>
+    <div id="level-info">welcome to tetr</div>
+    <div id="target-status">Targets: 0/0</div>
+  </div>
+  
+  <div class="panel-section">
+    <h3>Hold</h3>
+    <div id="hold" class="hold"></div>
+  </div>
+  
+  <div class="panel-section">
+    <h3>Next</h3>
+    <div id="next" class="next"></div>
+  </div>
+  
+  <div class="panel-section stats">
+    <h3>Statistics</h3>
+    <div>Combo: <span id="comboCount">0</span></div>
+    <div>Max Combo: <span id="maxCombo">0</span></div>
+    <div>All Clears: <span id="allClearCount">0</span></div>
+  </div>
+</div>
+
+<!-- Center: Game Board -->
+<div id="board"></div>
+
+<!-- Right Panel: Buttons -->
+<div id="right-panel">
+  <div class="panel-section">
+    <button onclick="restartLevel(); this.blur();">Restart Level</button>
+    <button onclick="loadLevel(currentLevel - 1); this.blur();" id="prevBtn">Previous Level</button>
+    <button onclick="loadLevel(currentLevel + 1); this.blur();" id="nextBtn">Next Level</button>
+    <button onclick="showLevelSelect(); this.blur();">Select Level</button>
+    <button onclick="loadDailyChallenge(); this.blur();" style="background: #f90; margin-top: 10px;">🌟 Daily Challenge</button>
+    <button onclick="showSettings(); this.blur();" style="background: #48a; margin-top: 5px;">⚙️ Settings</button>
+    <button onclick="resetProgress(); this.blur();" style="background: #a44; margin-top: 5px;">Reset Progress</button>
+  </div>
+</div>
+
+<!-- 通关UI -->
+<div id="levelCompleteOverlay" class="level-complete-overlay" style="display: none;">
+  <div class="level-complete-box">
+    <h2>🎉 Level Complete!</h2>
+    <p id="completeMessage">All targets covered!</p>
+    <button onclick="restartLevel(); hideLevelComplete(); this.blur();">Restart</button>
+    <button onclick="nextLevelFromComplete(); this.blur();" id="nextLevelBtn">Next Level</button>
+    <button onclick="showLevelSelect(); hideLevelComplete(); this.blur();">Level Select</button>
+    <div style="margin-top: 15px;">
+      <label style="cursor: pointer; font-size: 14px;">
+        <input type="checkbox" id="autoNextLevel" onchange="saveAutoNextSetting()"> 
+        Auto proceed to next level
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- 关卡选择UI -->
+<div id="levelSelectOverlay" class="level-select-overlay" style="display: none;">
+  <div class="level-select-box">
+    <h2>Select Level</h2>
+    <div class="level-grid" id="levelGrid"></div>
+    <button onclick="hideLevelSelect(); this.blur();">Close</button>
+  </div>
+</div>
+
+<!-- 设置UI -->
+<div id="settingsOverlay" class="level-select-overlay" style="display: none;">
+  <div class="level-select-box" style="max-width: 700px;">
+    <h2>⚙️ Settings</h2>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; padding: 20px; text-align: left;">
+      <!-- 左列：音频和时间设置 -->
+      <div>
+        <h3 style="color: #4a4; margin-bottom: 15px;">Audio</h3>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px;">Music Volume: <span id="volumeValue">30</span>%</label>
+          <input type="range" id="volumeSlider" min="0" max="100" value="30" style="width: 100%;" oninput="updateVolumeDisplay()">
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+          <label style="display: block; margin-bottom: 5px;">Background Music:</label>
+          <select id="bgmSelect" style="width: 100%; padding: 8px; background: #333; color: #eee; border: 1px solid #555; border-radius: 3px;" onchange="changeBGM()">
+            <option value="lib/bgm/ancients lagacy.mp3">Ancients Lagacy</option>
+            <option value="lib/bgm/strategy meeting.mp3">Strategy Meeting</option>
+            <option value="lib/bgm/Zhoumetry.mp3">Zhoumetry</option>
+          </select>
+        </div>
+        
+        <h3 style="color: #4a4; margin-bottom: 15px;">Timing</h3>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px;">DAS (Delayed Auto Shift): <span id="dasValue">100</span>ms</label>
+          <input type="range" id="dasSlider" min="0" max="200" value="100" style="width: 100%;" oninput="updateDASDisplay()">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px;">Soft Drop Speed: <span id="softDropValue">100</span>ms</label>
+          <input type="range" id="softDropSlider" min="0" max="500" value="100" style="width: 100%;" oninput="updateSoftDropDisplay()">
+        </div>
+      </div>
+      
+      <!-- 右列：键位绑定 -->
+      <div>
+        <h3 style="color: #4a4; margin-bottom: 15px;">Key Bindings</h3>
+        <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px; margin-bottom: 20px;">
+          <span>Move Left:</span>
+          <button id="keyLeft" onclick="rebindKey('left')" style="background: #333; padding: 6px; font-size: 12px;">ArrowLeft</button>
+          
+          <span>Move Right:</span>
+          <button id="keyRight" onclick="rebindKey('right')" style="background: #333; padding: 6px; font-size: 12px;">ArrowRight</button>
+          
+          <span>Rotate CW:</span>
+          <button id="keyRotateCW" onclick="rebindKey('rotateCW')" style="background: #333; padding: 6px; font-size: 12px;">ArrowUp</button>
+          
+          <span>Rotate CCW:</span>
+          <button id="keyRotateCCW" onclick="rebindKey('rotateCCW')" style="background: #333; padding: 6px; font-size: 12px;">Z</button>
+          
+          <span>Rotate 180°:</span>
+          <button id="keyRotate180" onclick="rebindKey('rotate180')" style="background: #333; padding: 6px; font-size: 12px;">A</button>
+          
+          <span>Soft Drop:</span>
+          <button id="keySoftDrop" onclick="rebindKey('softDrop')" style="background: #333; padding: 6px; font-size: 12px;">ArrowDown</button>
+          
+          <span>Hard Drop:</span>
+          <button id="keyHardDrop" onclick="rebindKey('hardDrop')" style="background: #333; padding: 6px; font-size: 12px;">Space</button>
+          
+          <span>Hold:</span>
+          <button id="keyHold" onclick="rebindKey('hold')" style="background: #333; padding: 6px; font-size: 12px;">Shift</button>
+        </div>
+        
+        <button onclick="resetKeybindings(); this.blur();" style="background: #a44; width: 100%; margin-bottom: 10px; padding: 8px;">Reset All to Default</button>
+      </div>
+    </div>
+    
+    <button onclick="hideSettings(); this.blur();" style="margin: 10px;">Close</button>
+  </div>
+</div>
+
+<!-- 移动端触摸控制 -->
+<div id="mobileControls" style="display: none;">
+  <!-- 左侧摇杆区域 -->
+  <div id="joystickArea" style="position: fixed; top: 50%; left: 60px; transform: translateY(-50%); width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); z-index: 1000;">
+    <div id="joystickKnob" style="position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.5); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); touch-action: none;"></div>
+  </div>
+  
+  <!-- 右侧按钮区域 -->
+  <div style="position: fixed; top: 50%; right: 60px; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 1000;">
+    <!-- 旋转按钮（3个） -->
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button id="rotateCCWBtn" style="width: 65px; height: 65px; border-radius: 50%; background: rgba(100,100,255,0.8); border: 3px solid rgba(255,255,255,0.6); font-size: 22px; color: white; touch-action: manipulation;">↶</button>
+      <button id="rotate180Btn" style="width: 65px; height: 65px; border-radius: 50%; background: rgba(150,100,255,0.8); border: 3px solid rgba(255,255,255,0.6); font-size: 18px; color: white; touch-action: manipulation; font-weight: bold;">180°</button>
+      <button id="rotateCWBtn" style="width: 65px; height: 65px; border-radius: 50%; background: rgba(100,100,255,0.8); border: 3px solid rgba(255,255,255,0.6); font-size: 22px; color: white; touch-action: manipulation;">↷</button>
+    </div>
+    
+    <!-- Hold和硬降按钮 -->
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button id="holdBtn" style="width: 100px; height: 65px; border-radius: 35px; background: rgba(255,200,0,0.8); border: 3px solid rgba(255,255,255,0.6); font-size: 16px; color: white; font-weight: bold; touch-action: manipulation;">HOLD</button>
+      <button id="hardDropBtn" style="width: 100px; height: 65px; border-radius: 35px; background: rgba(255,100,100,0.8); border: 3px solid rgba(255,255,255,0.6); font-size: 24px; color: white; touch-action: manipulation;">⬇ DROP</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== 游戏配置 =====
+let ROWS = 20, COLS = 4;
+let board, curr, rot, x, y, hold, nextQ, gameActive;
+let canHold = true;
+let targetMap = [];
+
+// 统计
+let playerCombo = 0;
+let maxCombo = 0;
+let allClearCount = 0;
+
+// 关卡系统
+let currentLevel = 1;
+let currentLevelData = null;
+const MAX_LEVEL = 54;
+const UNLOCK_ALL_LEVELS = 0; // 设置为1可以解锁所有关卡，0为正常模式
+let unlockedLevels = 1; // 已解锁的最高关卡
+let autoNextLevel = false; // 自动进入下一关
+let unlockedChapters = 1; // 已解锁的章节数
+let currentChapter = 1; // 当前章节
+let isDailyChallenge = false; // 是否在每日挑战模式
+let returnLevel = 1; // 从每日挑战返回的关卡
+
+// 嵌入的关卡数据
+// 章节信息
+const CHAPTERS = {
+  1: {"name": "1.introduction", "levels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]},
+  2: {"name": "2.journey start", "levels": [34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49]},
+  3: {"name": "3.imposible chellenge", "levels": [50, 51, 52, 53, 54]},
+};
+
+// 关卡名称
+const LEVEL_NAMES = {
+  1: "welcome to Zhoumetry",
+  2: "try to move",
+  3: "spin!",
+  4: "lazy spin....",
+  5: "wow,crazy J",
+  6: "reverse!",
+  7: "clear all things",
+  8: "O and J On the Journey",
+  9: "LOL",
+  10: "TO...efl",
+  11: "L kill J",
+  12: "insert",
+  13: "doeble chellenge",
+  14: "crazy I",
+  15: "how can i get S in",
+  16: "almost there",
+  17: "Z S love each other",
+  18: "S and L cheated",
+  19: "LOT ... of blocks!",
+  20: "Z found J and L",
+  21: "ITS time for end",
+  22: "LJTZ...what's this",
+  23: "TZSL get pc",
+  24: "I kick the wall",
+  25: "T is effecient",
+  26: "This is amazing",
+  27: "why T is called C-spin",
+  28: "flying down!",
+  29: "they need wall",
+  30: "destroy the tower",
+  31: "where's my wall",
+  32: "can't get down",
+  33: "spinning T",
+  34: "last Opportunity to rest",
+  35: "SoLve that!",
+  36: "Too eZ, right",
+  37: "Trap!",
+  38: "Trip or Test, Ticket To The nexT",
+  39: "I think this is hard enough",
+  40: "180 jump",
+  41: "Super way",
+  42: "Zig Zag",
+  43: "Jewel power",
+  44: "Let the level be harder, so eazy",
+  45: "we met some serious problem",
+  46: "random garbage",
+  47: "The five stars",
+  48: "mOnOpOly",
+  49: "chaotic rain",
+  50: "Oh this is too ez",
+  51: "I'm Zhoumy, you can't pass",
+  52: "Fallen snow",
+  53: "Spider web trap",
+  54: "god's hand",
+};
+
+// 关卡数据
+const LEVELS = {
+  1: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],["gray",0,0,"gray"],["gray",0,0,"gray"]],"targetMap":[null,null,null,null,[null,true,true],[null,true,true]],"currentPiece":"O","currentRotation":0,"currentX":1,"currentY":0,"hold":null,"nextQueue":[],"canHold":true},
+  2: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,"gray","gray"],[0,"gray","gray","gray"],[0,"gray","gray","gray"]],"targetMap":[null,null,null,[true,true],[true],[true]],"currentPiece":"J","currentRotation":1,"currentX":2,"currentY":0,"hold":null,"nextQueue":[],"canHold":true},
+  3: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,"gray","gray"],[0,"gray","gray","gray"]],"targetMap":[null,null,null,[null,false,false,false],[true,true,false,false],[true,false,false,false]],"currentPiece":"Z","currentRotation":0,"currentX":0,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  4: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],["gray",0,0,0],["gray","gray",0,"gray"]],"targetMap":[null,null,null,null,[null,true,true,true],[null,null,true]],"currentPiece":"I","currentRotation":0,"currentX":0,"currentY":0,"hold":"T","nextQueue":[],"canHold":true,"gameActive":true},
+  5: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,"gray","gray","gray"],[0,0,0,"gray"]],"targetMap":[null,null,null,null,[true,false],[true,true,true]],"currentPiece":"J","currentRotation":0,"currentX":0,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  6: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],["gray","gray",0,"gray"],[0,0,0,"gray"]],"targetMap":[null,null,null,null,[false,false,true,false],[true,true,true,false]],"currentPiece":"L","currentRotation":0,"currentX":0,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  7: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,"gray"],[0,0,"gray","gray"],[0,0,0,"gray"]],"targetMap":[null,null,null,[true,true,true],[true,true],[true,true,true]],"currentPiece":"O","currentRotation":0,"currentX":0,"currentY":0,"hold":"T","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  8: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],["gray",0,0,"gray"],[0,0,0,"gray"],[0,0,0,"gray"]],"targetMap":[null,null,null,[null,true,true],[true,true,true],[true,true,true]],"currentPiece":"O","currentRotation":0,"currentX":1,"currentY":0,"hold":"J","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  9: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,"gray",0],[0,0,"gray","gray"],["gray",0,0,0]],"targetMap":[null,null,null,[true,true,null,true],[true,true],[null,true,true,true]],"currentPiece":"L","currentRotation":3,"currentX":2,"currentY":0,"hold":"O","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  10: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,"gray"],["gray",0,0,0],["gray","gray",0,0]],"targetMap":[[],[],null,[true,true,true],[false,true,true,true],[false,false,true,true]],"currentPiece":"O","currentRotation":0,"currentX":1,"currentY":0,"hold":"T","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  11: {"width":4,"height":20,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],["gray",0,0,0],["gray","gray",0,0],["gray","gray","gray",0],["gray","gray","gray",0],["gray","gray","gray",0]],"targetMap":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[null,null,null,true]],"currentPiece":"J","currentRotation":3,"currentX":2,"currentY":2,"hold":"L","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  12: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],["gray","gray",0,"gray"],["gray","gray",0,0]],"targetMap":[null,null,null,null,[false,false,true],[false,false,true,true]],"currentPiece":"L","currentRotation":1,"currentX":0,"currentY":1,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  13: {"width":5,"height":7,"board":[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],["gray","gray","gray","gray",0],["gray",0,0,0,0],["gray","gray",0,"gray","gray"],["gray","gray",0,"gray","gray"]],"targetMap":[null,null,null,null,[null,true,true,false],[null,null,true],[null,null,true]],"currentPiece":"L","currentRotation":0,"currentX":1,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  14: {"width":7,"height":10,"board":[[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],["gray","gray","gray","gray","gray","gray",0],["gray","gray","gray","gray","gray","gray",0],["gray","gray","gray",0,0,0,0],["gray","gray","gray",0,"gray","gray","gray"],["gray","gray","gray",0,"gray","gray","gray"],[0,0,0,0,"gray","gray","gray"]],"targetMap":[null,null,null,null,null,null,null,null,null,[true,true,true,true]],"currentPiece":"I","currentRotation":3,"currentX":-1,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  15: {"width":5,"height":7,"board":[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],["gray","gray","gray",0,0],["gray","gray",0,0,"gray"]],"targetMap":[null,null,null,null,[null,false,false,false],[null,null,false,true,true],[null,null,true,true]],"currentPiece":"S","currentRotation":0,"currentX":1,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  16: {"width":5,"height":7,"board":[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],["gray","gray",0,0,"gray"],["gray","gray","gray",0,0]],"targetMap":[null,null,null,null,null,[null,null,true,true,false],[null,null,false,true,true]],"currentPiece":"Z","currentRotation":0,"currentX":2,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  17: {"width":4,"height":7,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],["gray",0,0,"gray"],["gray",0,0,"gray"]],"targetMap":[null,null,null,null,null,[null,true,true],[null,true,true]],"currentPiece":"Z","currentRotation":0,"currentX":0,"currentY":0,"hold":"S","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  18: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,"gray"],[0,"gray",0,0],["gray",0,0,"gray"]],"targetMap":[[],[],null,[true,true,true],[true,null,true,true],[false,true,true]],"currentPiece":"S","currentRotation":0,"currentX":0,"currentY":0,"hold":"L","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  19: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],"targetMap":[[],[],[],[true,true,true,true],[true,true,true,true],[true,true,true,true]],"currentPiece":"L","currentRotation":0,"currentX":0,"currentY":0,"hold":"O","nextQueue":["T"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  20: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],"targetMap":[[],[],[],[true,true,true,true],[true,true,true,true],[true,true,true,true]],"currentPiece":"J","currentRotation":0,"currentX":0,"currentY":0,"hold":null,"nextQueue":["L","Z"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  21: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],"targetMap":[[],[],[],[true,true,true,true],[true,true,true,true],[true,true,true,true]],"currentPiece":"J","currentRotation":0,"currentX":0,"currentY":0,"hold":"T","nextQueue":["S"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  22: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],"targetMap":[[],[],[true,true,true,true],[true,true,true,true],[true,true,true,true],[true,true,true,true]],"currentPiece":"L","currentRotation":1,"currentX":0,"currentY":0,"hold":"J","nextQueue":["T","Z"],"canHold":true,"gameActive":true,"autoRefillNext":true},
+  23: {"width":4,"height":6,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],"targetMap":[null,null,[true,true,true,true],[true,true,true,true],[true,true,true,true],[true,true,true,true]],"currentPiece":"T","currentRotation":1,"currentX":-1,"currentY":0,"hold":"S","nextQueue":["L","Z"],"canHold":true,"gameActive":true,"autoRefillNext":true},
+  24: {"width":9,"height":11,"board":[[0,0,0,0,0,"gray","gray","gray","gray"],["gray","gray","gray","gray","gray","gray","gray","gray","gray"],["gray",0,0,0,0,0,"gray","gray","gray"],["gray","gray","gray","gray","gray","gray","gray","gray","gray"],["gray","gray",0,0,0,0,0,"gray","gray"],["gray","gray","gray","gray","gray","gray","gray","gray","gray"],["gray","gray","gray",0,0,0,0,0,"gray"],["gray","gray","gray","gray","gray","gray","gray","gray","gray"],["gray","gray","gray","gray",0,0,0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray","gray"],["gray","gray","gray","gray","gray",0,0,0,0]],"targetMap":[null,null,[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false],null,null,null,null,[null,null,null,null,null,true,true,true,true]],"currentPiece":"I","currentRotation":0,"currentX":0,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  25: {"width":4,"height":10,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],["gray","gray",0,"gray"],["gray",0,0,"gray"],["gray","gray",0,"gray"]],"targetMap":[null,null,null,null,null,null,[null,null,false],[null,false,true],[null,true,true],[false,false,true],null,null,null,null,null,null,null,[null,null,true],[null,null,true,true],[null,false,true,false]],"currentPiece":"T","currentRotation":0,"currentX":0,"currentY":0,"hold":"S","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  26: {"width":6,"height":12,"board":[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],["gray","gray",0,0,"gray","gray"],["gray","gray",0,0,0,"gray"],["gray","gray","gray","gray",0,"gray"],["gray","gray","gray",0,0,"gray"],["gray","gray","gray","gray",0,"gray"],["gray","gray","gray",0,0,0],["gray","gray","gray","gray",0,"gray"]],"targetMap":[[],[],[],[],null,null,null,[null,null,null,null,true],[null,null,null,true,true],[null,null,null,null,true],[null,null,null,true,true,true],[null,null,null,null,true]],"currentPiece":"T","currentRotation":0,"currentX":1,"currentY":0,"hold":"T","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  27: {"width":6,"height":12,"board":[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],["gray","gray",0,0,"gray","gray"],["gray",0,0,0,"gray","gray"],["gray",0,"gray","gray","gray","gray"],["gray",0,0,"gray","gray","gray"],["gray",0,"gray","gray","gray","gray"],["gray","gray",0,"gray","gray","gray"]],"targetMap":[[],[],[],[],null,null,null,[null,null,null,null,false],[null,null,null,false,false],[null,null,null,null,false],[null,null,null,false,false,false],[null,null,true,false,false]],"currentPiece":"T","currentRotation":3,"currentX":2,"currentY":0,"hold":"T","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  28: {"width":4,"height":20,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],["gray","gray",0,0],["gray",0,0,"gray"],["gray","gray",0,0],["gray",0,0,"gray"],["gray",0,0,"gray"],[0,0,"gray","gray"],["gray",0,0,"gray"],[0,0,"gray","gray"],["gray",0,0,"gray"],["gray",0,0,"gray"],["gray","gray",0,0],["gray",0,0,"gray"],["gray","gray",0,0],["gray",0,0,"gray"],["gray","gray",0,0],["gray","gray",0,"gray"]],"targetMap":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[null,null,true],[null,null,true,true],[null,false,true,false]],"currentPiece":"T","currentRotation":1,"currentX":-1,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  29: {"width":5,"height":7,"board":[[0,0,0,0,0],[0,0,0,0,0],["gray",0,0,0,0],[0,0,0,0,0],[0,"gray","gray",0,"gray"],[0,0,"gray",0,0],["gray",0,"gray","gray",0]],"targetMap":[null,null,null,[false],[true,false,false,false],[true,true,false,false,false],[null,true,false,false]],"currentPiece":"S","currentRotation":0,"currentX":2,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  30: {"width":6,"height":12,"board":[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],["gray","gray",0,0,"gray","gray"],["gray",0,0,0,0,"gray"],["gray","gray",0,0,"gray","gray"],["gray",0,0,0,0,"gray"],["gray","gray",0,0,"gray","gray"],["gray",0,0,0,0,"gray"],["gray","gray",0,0,"gray","gray"]],"targetMap":[null,null,null,null,null,null,[null,true,true,true,true],null,[null,true,true,true,true],[null,false,null,null,null,false],[null,true,true,true,true]],"currentPiece":"Z","currentRotation":0,"currentX":1,"currentY":0,"hold":"I","nextQueue":["Z","I"],"canHold":true,"gameActive":true,"autoRefillNext":true},
+  31: {"width":6,"height":12,"board":[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,"gray","gray","gray","gray"],[0,"gray","gray","gray","gray","gray"],[0,0,"gray","gray","gray","gray"],["gray",0,0,0,"gray","gray"],["gray",0,0,"gray","gray","gray"]],"targetMap":[null,null,null,null,null,null,[false],[null,null,false],[true],[true,true],[null,true,true,true],[false,true,true]],"currentPiece":"S","currentRotation":0,"currentX":1,"currentY":3,"hold":"S","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  32: {"width":4,"height":7,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,"gray",0],["gray",0,0,0],[0,0,0,0],[0,"gray",0,0]],"targetMap":[[],[],null,null,null,null,[true],null,null,null,null,null,null,null,null,null,null,null,null,[true]],"currentPiece":"T","currentRotation":0,"currentX":0,"currentY":0,"hold":"Z","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  33: {"width":4,"height":7,"board":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,"gray",0],[0,0,0,0],["gray",0,0,0]],"targetMap":[[],[],null,[null,false,false],[null,null,false,true],[null,null,true,true],[false,false,false,true]],"currentPiece":"T","currentRotation":0,"currentX":0,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  34: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,"gray","gray","gray","gray","gray","gray","gray","gray"],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray",0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,"gray","gray","gray","gray","gray","gray","gray","gray"],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray",0,0]],"targetMap":[null,null,null,null,null,null,null,null,null,null,null,[null,null,null,null,null,null,null,false,true,true],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,true,true],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,true,true]],"currentPiece":"O","currentRotation":0,"currentX":8,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  35: {"width":6,"height":10,"board":[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,"gray",0,0,0],[0,0,"gray",0,"gray",0],["gray",0,0,0,0,"gray"],[0,0,0,"gray",0,0],[0,0,0,0,0,0],[0,"gray",0,0,0,0],[0,0,0,"gray",0,0]],"targetMap":[null,null,null,null,null,null,[null,null,null,null,false,true],[null,null,null,true],[null,null,null,false]],"currentPiece":"L","currentRotation":0,"currentX":1,"currentY":0,"hold":"S","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  36: {"width":6,"height":10,"board":[["gray",0,0,0,0,"gray"],["gray",0,0,0,0,0],[0,"gray",0,0,"gray",0],[0,0,"gray",0,0,0],[0,0,0,0,0,"gray"],[0,0,0,"gray",0,0],[0,"gray",0,0,0,0],[0,0,0,0,"gray",0],[0,"gray",0,0,0,"gray"],[0,0,0,0,0,0]],"targetMap":[[null,null,null,null,null,false],null,null,null,null,null,[true],[false,true,null,false],[null,null,true]],"currentPiece":"Z","currentRotation":0,"currentX":1,"currentY":0,"hold":"T","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  37: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,0,0,"gray"],[0,0,0,0,0,0,0,0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray","gray",0],[0,0,0,"gray","gray","gray","gray","gray",0,0],[0,0,"gray","gray",0,0,"gray",0,"gray",0],[0,"gray","gray",0,0,0,0,0,"gray","gray"],[0,0,0,0,0,"gray",0,0,0,"gray"],["gray",0,"gray","gray","gray","gray",0,"gray",0,0],[0,0,"gray","gray","gray",0,0,"gray",0,"gray"],["gray",0,"gray",0,"gray","gray",0,0,0,"gray"],[0,0,0,0,0,0,0,"gray",0,"gray"],["gray","gray","gray",0,"gray",0,"gray",0,0,0]],"targetMap":[null,null,null,null,[null,null,null,null,null,null,null,false],null,null,null,null,null,[null,null,null,null,null,null,null,null,true],[null,null,null,null,null,null,null,true,true,true]],"currentPiece":"T","currentRotation":2,"currentX":0,"currentY":-1,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  38: {"width":10,"height":12,"board":[["gray","gray","gray","gray","gray","gray","gray","gray","gray","gray"],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,"gray","gray","gray","gray",0,0,0,"gray"],["gray",0,0,0,0,0,0,0,0,0],[0,0,"gray",0,0,0,0,"gray","gray","gray"],["gray",0,0,0,0,"gray",0,0,"gray","gray"],[0,0,"gray","gray",0,0,0,0,0,0],[0,0,"gray","gray","gray","gray","gray",0,0,0],["gray",0,0,0,"gray",0,0,0,0,0],[0,"gray",0,0,0,0,0,"gray",0,"gray"],["gray","gray",0,"gray",0,"gray","gray",0,0,0]],"targetMap":[null,null,null,null,[null,true],[true,true],[null,true],[null,null,null,null,null,null,null,null,null,false]],"currentPiece":"T","currentRotation":0,"currentX":7,"currentY":10,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  39: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,"gray","gray","gray"],["gray","gray","gray","gray",0,0,0,0,0,0],[0,0,0,0,0,0,"gray","gray","gray","gray"],[0,"gray","gray","gray","gray",0,"gray","gray","gray","gray"],[0,"gray","gray","gray","gray","gray","gray","gray","gray","gray"],[0,0,0,0,"gray","gray",0,"gray",0,"gray"],["gray","gray","gray",0,"gray",0,0,0,0,0],["gray","gray","gray",0,"gray","gray",0,"gray",0,"gray"],[0,0,0,0,"gray","gray",0,0,0,0],[0,"gray","gray","gray","gray","gray","gray","gray",0,"gray"],[0,"gray",0,0,0,0,0,0,0,"gray"],[0,0,0,0,0,0,"gray","gray","gray","gray"]],"targetMap":[[null,null,null,null,null,false,false],[null,null,null,null,null,null,null,null,false,true],null,[null,null,null,null,false],null,[null,null,null,null,null,null,true],[null,null,null,null,null,false]],"currentPiece":"I","currentRotation":0,"currentX":0,"currentY":0,"hold":"I","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  40: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,0,0,0],["gray",0,0,0,0,0,0,0,0,"gray"],[0,0,0,0,0,0,0,0,"gray",0],[0,0,0,0,0,0,0,"gray",0,0],[0,0,0,0,0,"gray",0,0,0,0],[0,0,0,0,0,"gray",0,0,0,0],["gray",0,0,0,0,0,"gray",0,0,0],["gray","gray",0,0,0,0,0,"gray","gray","gray"],["gray","gray","gray",0,0,0,0,0,"gray","gray"],["gray",0,0,"gray",0,0,0,0,0,"gray"],["gray",0,0,0,"gray",0,0,0,0,0],["gray",0,0,0,0,"gray",0,0,0,0]],"targetMap":[[true]],"currentPiece":"I","currentRotation":2,"currentX":6,"currentY":9,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  41: {"width":10,"height":12,"board":[["gray",0,0,0,0,0,0,0,0,"gray"],["gray",0,0,0,0,0,0,0,0,0],[0,0,"gray","gray","gray",0,"gray","gray","gray",0],[0,0,"gray",0,"gray",0,0,0,"gray","gray"],["gray",0,0,0,0,0,0,0,"gray","gray"],[0,0,"gray",0,0,"gray",0,0,0,"gray"],[0,0,"gray",0,0,0,"gray",0,0,0],["gray",0,0,0,0,0,0,0,0,0],[0,0,"gray",0,0,"gray",0,0,0,"gray"],["gray","gray",0,0,"gray",0,"gray","gray",0,0],[0,0,0,0,"gray",0,0,"gray",0,0],[0,0,0,0,0,0,0,0,0,0]],"targetMap":[null,null,null,null,null,null,null,null,null,null,null,[true]],"currentPiece":"S","currentRotation":1,"currentX":8,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  42: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,"gray"],[0,0,"gray",0,0,0,0,0,"gray",0],[0,0,0,0,0,"gray","gray",0,0,0],[0,0,"gray",0,0,"gray","gray",0,0,"gray"],[0,0,0,0,"gray",0,0,0,0,0],["gray","gray","gray",0,0,"gray","gray",0,"gray","gray"],[0,0,0,0,0,0,0,0,"gray",0],[0,"gray",0,0,0,"gray",0,0,0,0],[0,0,"gray","gray",0,0,0,0,"gray",0],[0,0,0,0,0,0,0,0,0,0],[0,0,"gray",0,"gray",0,0,0,0,"gray"]],"targetMap":[null,null,null,null,null,null,null,null,null,null,[null,true,true]],"currentPiece":"Z","currentRotation":0,"currentX":4,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  43: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,0,0,0],[0,0,0,"gray",0,0,"gray","gray","gray",0],[0,0,"gray",0,"gray","gray",0,0,0,"gray"],[0,0,"gray",0,0,0,0,"gray",0,"gray"],[0,0,0,"gray","gray",0,0,"gray",0,"gray"],["gray",0,"gray",0,0,"gray","gray",0,0,0],["gray",0,"gray",0,"gray",0,"gray","gray","gray",0],[0,0,0,0,"gray",0,0,0,"gray",0],["gray",0,"gray","gray","gray","gray","gray","gray",0,0],["gray",0,0,0,"gray",0,0,0,0,0],[0,"gray","gray",0,"gray",0,0,0,0,"gray"],[0,0,0,0,"gray",0,"gray",0,0,0]],"targetMap":[null,null,null,null,null,null,null,null,null,null,null,[null,null,null,null,null,true]],"currentPiece":"J","currentRotation":0,"currentX":0,"currentY":10,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  44: {"width":10,"height":12,"board":[[0,0,0,0,"gray",0,"gray","gray",0,0],[0,"gray",0,0,0,0,"gray","gray","gray",0],[0,0,"gray",0,"gray",0,"gray",0,0,0],["gray",0,"gray",0,0,0,"gray",0,"gray","gray"],["gray",0,0,"gray",0,"gray",0,0,"gray","gray"],[0,0,0,"gray",0,0,"gray",0,0,"gray"],[0,"gray",0,0,0,0,"gray",0,"gray",0],[0,0,0,"gray","gray",0,"gray",0,0,0],[0,"gray","gray",0,0,0,"gray",0,"gray","gray"],[0,0,0,0,0,"gray","gray","gray",0,0],[0,"gray",0,"gray",0,0,0,0,"gray",0],[0,0,0,"gray",0,0,"gray",0,0,0]],"targetMap":[[false,null,null,null,null,null,false,null,true],[null,null,false,false,null,null,false],null,null,[null,null,true]],"currentPiece":"L","currentRotation":0,"currentX":3,"currentY":0,"hold":"L","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  45: {"width":10,"height":10,"board":[[0,0,0,0,0,0,0,"gray",0,"gray"],[0,0,0,0,0,0,"gray",0,0,"gray"],[0,0,0,0,0,0,0,0,0,"gray"],[0,0,0,0,0,0,0,0,0,0],[0,0,"gray","gray","gray","gray","gray","gray","gray",0],[0,"gray",0,"gray",0,"gray",0,"gray",0,0],[0,0,0,0,0,0,0,0,0,0],["gray",0,"gray",0,"gray",0,"gray",0,0,"gray"],["gray","gray","gray",0,0,0,"gray",0,0,0],["gray","gray","gray","gray","gray",0,"gray",0,0,0]],"targetMap":[[null,null,null,null,null,null,null,null,true],[null,null,null,null,null,null,null,null,false],[null,false,false,true,true,false,null,null,false],[null,true,false,false,false,false,true,null,false],[null,false,null,null,null,false,false,null,false],[null,null,null,null,null,null,null,null,false,true],null,[null,null,null,null,null,null,null,null,true],[null,null,null,null,null,null,null,null,false],[null,null,null,null,null,null,null,true]],"currentPiece":"L","currentRotation":0,"currentX":3,"currentY":0,"hold":"Z","nextQueue":["Z","I","T"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  46: {"width":10,"height":12,"board":[["gray","gray","gray",0,0,0,0,"gray","gray","gray"],["gray",0,0,0,0,0,0,0,0,"gray"],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,"gray",0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,"gray",0,0,"gray",0,0,"gray","gray",0],[0,0,0,"gray",0,0,"gray",0,0,0],[0,"gray",0,0,0,0,"gray",0,"gray",0],[0,0,0,"gray","gray",0,"gray",0,0,0],[0,0,0,0,0,0,0,0,0,"gray"],["gray",0,0,"gray",0,"gray",0,"gray",0,0],[0,0,0,0,0,0,"gray",0,0,0]],"targetMap":[null,[null,null,null,null,null,null,null,null,true],null,[null,null,null,null,null,null,null,null,null,false],[null,null,null,null,null,null,null,null,false,true],null,[null,null,null,null,null,null,false,null,false,true],[null,null,null,null,true],[null,null,null,null,null,false,null,true,false],[null,null,null,null,null,null,true,false,false],[null,null,false,null,false],[null,null,false,true,null,null,null,null,true]],"currentPiece":"S","currentRotation":0,"currentX":3,"currentY":0,"hold":"J","nextQueue":["Z","T","J","I"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  47: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,0,0,0],["gray",0,0,0,0,0,0,0,0,0],["gray",0,"gray",0,0,0,"gray",0,"gray",0],["gray",0,0,0,"gray","gray",0,0,"gray",0],["gray",0,"gray",0,0,0,0,0,"gray",0],[0,0,0,0,0,0,0,"gray",0,0],[0,"gray",0,0,"gray",0,"gray",0,0,0],[0,0,0,"gray",0,"gray",0,"gray",0,0],[0,"gray",0,0,0,0,0,0,0,"gray"],[0,0,"gray",0,"gray",0,"gray",0,"gray",0],[0,0,"gray",0,0,0,"gray",0,0,0],[0,0,0,0,"gray",0,"gray",0,"gray",0]],"targetMap":[null,null,null,[null,null,false],[null,null,null,null,true],null,null,[null,null,null,null,false],[null,null,true,null,true,null,true],[null,null,null,null,null,false,false],[null,null,null,true,null,true,null,null,true],[null,null,null,null,false,false,null,null,null,true]],"currentPiece":"J","currentRotation":0,"currentX":3,"currentY":0,"hold":"T","nextQueue":["L","S","I"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  48: {"width":10,"height":12,"board":[[0,0,"gray",0,0,0,0,0,0,0],[0,"gray","gray",0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,"gray",0,"gray","gray","gray",0,"gray",0,0],[0,0,0,0,0,0,0,0,0,0],["gray",0,0,0,0,0,0,0,0,0],[0,0,"gray",0,"gray",0,0,0,0,"gray"],["gray",0,0,"gray",0,"gray",0,0,0,0],[0,0,"gray",0,0,0,0,"gray","gray",0],["gray",0,"gray",0,"gray","gray",0,0,0,0],[0,0,0,0,0,0,"gray",0,0,"gray"],["gray","gray","gray",0,0,"gray",0,0,0,0]],"targetMap":[null,[null,null,null,false],null,[null,false],[null,null,null,true,false,true],[null,null,null,false,false,true],[null,null,null,null,null,false,null,null,false],[null,false],[null,null,null,null,null,null,null,null,null,true],[null,null,null,true,null,null,null,null,false,true],[null,null,false,null,true,false,null,null,false],[null,null,null,null,null,null,false,true,false,false]],"currentPiece":"Z","currentRotation":0,"currentX":3,"currentY":0,"hold":"I","nextQueue":["O","J","T"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  49: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,0,0,"gray"],[0,"gray","gray",0,0,0,0,0,0,0],[0,0,0,0,0,0,"gray","gray","gray",0],[0,0,"gray",0,0,0,0,0,0,0],["gray",0,0,0,0,0,0,0,"gray","gray"],[0,0,"gray",0,0,0,0,0,0,0],["gray",0,0,0,"gray","gray",0,0,0,0],["gray",0,0,"gray","gray",0,0,0,0,0],[0,"gray","gray","gray",0,0,0,"gray","gray","gray"],[0,"gray",0,0,0,0,0,0,"gray",0],["gray","gray","gray","gray",0,0,"gray",0,0,0],[0,0,0,0,0,0,0,0,"gray",0]],"targetMap":[null,null,null,[null,null,null,null,null,null,true],null,[false],[null,true,null,true],null,[null,null,null,null,true],[null,null,null,null,null,null,null,false,null,false],[null,null,null,null,null,null,null,true,false],[true,null,null,null,true,false,null,null,null,true]],"currentPiece":"L","currentRotation":0,"currentX":3,"currentY":0,"hold":"I","nextQueue":["T","L","S","J"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  50: {"width":20,"height":32,"board":[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray",0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,"gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray"],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray",0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,"gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray"],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray",0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,"gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray"],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray",0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,"gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray"],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray",0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,"gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray"],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"targetMap":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,true,true],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,true,true]],"currentPiece":"O","currentRotation":0,"currentX":0,"currentY":0,"hold":null,"nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  51: {"width":20,"height":26,"board":[[0,0,0,0,0,0,0,"gray",0,0,0,0,"gray",0,0,0,0,0,0,0],[0,0,0,0,0,0,0,"gray","gray","gray","gray","gray","gray",0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,"gray","gray","gray","gray",0,0,0,0,0,0,0],[0,"gray","gray","gray","gray","gray",0,"gray","gray","gray","gray","gray","gray","gray",0,0,0,0,0,0],[0,0,0,0,0,0,"gray","gray",0,0,0,0,"gray",0,0,0,0,0,0,0],["gray",0,"gray",0,0,0,0,"gray",0,0,0,0,"gray",0,0,0,0,0,0,0],[0,0,0,"gray","gray",0,"gray",0,"gray","gray","gray","gray","gray",0,0,0,0,0,"gray",0],[0,0,0,0,"gray",0,"gray",0,0,0,0,"gray","gray",0,0,0,0,0,0,0],[0,"gray","gray","gray","gray","gray","gray",0,"gray","gray","gray","gray","gray","gray",0,0,"gray","gray","gray","gray"],[0,0,0,0,0,0,"gray",0,0,0,0,0,"gray","gray",0,0,0,0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray","gray",0,"gray","gray","gray","gray",0,0,"gray","gray",0,0],["gray",0,0,0,0,0,0,0,0,0,0,0,"gray",0,0,0,"gray",0,0,0],["gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray",0,0,"gray",0,0,0,0],[0,0,0,0,0,"gray",0,0,0,0,0,0,"gray",0,"gray",0,0,0,"gray",0],[0,"gray","gray","gray","gray","gray",0,"gray","gray","gray","gray",0,0,0,0,0,0,0,0,0],[0,0,"gray",0,"gray","gray",0,0,0,0,0,0,"gray","gray","gray","gray","gray","gray",0,"gray"],[0,"gray",0,"gray",0,"gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray",0,0,0],[0,0,"gray",0,"gray",0,"gray","gray","gray","gray","gray","gray","gray",0,0,0,0,0,0,0],[0,"gray",0,"gray",0,"gray",0,"gray",0,"gray",0,"gray","gray","gray","gray","gray","gray",0,"gray","gray"],[0,0,"gray",0,"gray",0,"gray",0,"gray",0,"gray",0,"gray","gray",0,0,0,0,0,0],[0,"gray",0,"gray",0,"gray",0,"gray",0,"gray",0,"gray","gray","gray","gray","gray","gray","gray",0,"gray"],[0,"gray","gray",0,"gray",0,"gray",0,"gray",0,"gray","gray",0,0,0,0,"gray",0,0,0],[0,"gray",0,"gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray",0,0],[0,"gray",0,0,0,0,0,0,0,0,0,"gray",0,0,0,0,"gray",0,0,0],[0,"gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray","gray",0],[0,0,0,0,0,0,"gray",0,0,0,0,0,0,0,0,0,0,0,0,0]],"targetMap":[[false,null,null,null,null,null,true,null,null,null,null,null,null,false],null,[null,null,null,null,null,null,null,null,null,null,null,null,null,true,null,null,null,null,false],[false,null,null,null,null,null,null,null,null,null,null,null,null,false],null,null,null,null,null,null,null,null,null,[null,null,null,null,false]],"currentPiece":"I","currentRotation":0,"currentX":8,"currentY":0,"hold":"I","nextQueue":[],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  52: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,0,0,"gray"],[0,0,"gray",0,0,0,0,"gray",0,0],["gray",0,0,0,"gray",0,0,0,0,0],[0,0,0,0,0,0,0,"gray","gray",0],[0,0,"gray",0,0,0,0,0,"gray",0],[0,0,0,0,0,0,0,0,0,0],[0,"gray",0,0,0,0,"gray",0,0,"gray"],[0,0,0,"gray",0,0,0,0,0,"gray"],[0,0,0,"gray",0,"gray",0,0,"gray","gray"],[0,"gray",0,0,0,0,0,0,"gray",0],[0,0,0,"gray",0,"gray","gray",0,0,0],[0,"gray",0,0,"gray",0,0,0,"gray",0]],"targetMap":[null,[null,null,null,null,null,null,null,false],[null,null,null,null,null,null,null,null,true],[null,null,null,null,null,null,null,null,null,false],[null,null,null,null,null,false,null,null,null,true],[null,null,null,null,null,null,null,null,false],[null,null,null,null,null,null,false,false],[false,null,false,null,null,null,null,null,true],[true,false,true],[null,null,null,null,null,null,null,null,null,true],[null,true,null,null,null,null,null,null,true],[null,null,true]],"currentPiece":"T","currentRotation":0,"currentX":3,"currentY":0,"hold":"S","nextQueue":["J","L","Z","J"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  53: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,0,0,0],["gray",0,0,0,0,0,0,0,0,0],["gray",0,"gray",0,0,0,"gray",0,"gray",0],["gray",0,0,0,"gray","gray",0,0,"gray",0],["gray",0,"gray",0,0,0,0,0,"gray",0],[0,0,0,0,0,0,0,"gray",0,0],[0,"gray",0,0,"gray",0,"gray",0,0,0],[0,0,0,"gray",0,"gray",0,"gray",0,0],[0,"gray",0,0,0,0,0,0,0,"gray"],[0,0,"gray",0,"gray",0,"gray",0,"gray",0],[0,0,"gray",0,0,0,"gray",0,0,0],[0,0,0,0,"gray",0,"gray",0,"gray",0]],"targetMap":[null,null,null,[null,null,false],[null,null,null,null,true,null,true],null,null,[null,null,null,null,false],[null,null,true,null,true,null,true],[null,null,null,true,null,true,false],[null,null,null,false,true,false,null,null,true],[null,null,null,true,false,false,null,null,null,true]],"currentPiece":"T","currentRotation":0,"currentX":5,"currentY":0,"hold":"J","nextQueue":["L","S","I"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+  54: {"width":10,"height":12,"board":[[0,0,0,0,0,0,0,0,0,"gray"],[0,"gray","gray",0,0,0,0,0,0,0],[0,0,0,0,0,0,"gray","gray","gray",0],[0,0,"gray",0,0,0,0,0,0,0],["gray",0,0,0,0,0,0,0,"gray","gray"],[0,0,"gray",0,0,0,0,0,0,0],["gray",0,0,0,"gray","gray",0,0,0,0],["gray",0,0,"gray","gray",0,0,0,0,0],[0,"gray","gray","gray",0,0,0,"gray","gray","gray"],[0,"gray",0,0,0,0,0,0,"gray",0],["gray","gray","gray","gray",0,0,"gray",0,0,0],[0,0,0,0,0,0,0,0,"gray",0]],"targetMap":[null,null,null,[null,null,null,null,null,null,true],null,[false],[null,true,null,true],null,[null,null,null,null,false],[true,null,null,null,null,null,null,false,null,false],[null,null,null,null,null,null,null,true,false],[false,null,null,null,false,false,null,null,null,true]],"currentPiece":"L","currentRotation":0,"currentX":3,"currentY":0,"hold":"I","nextQueue":["T","L","S","J"],"canHold":true,"gameActive":true,"autoRefillNext":false},
+};
+
+// 每日挑战
+const DAILY_CHALLENGES = {
+  'daily_1': {'name': 'old 1.spin or try something else', 'data': {"width":8,"height":18,"board":[[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,"gray"],[0,0,0,0,0,0,0,0],[0,0,0,0,"gray",0,"gray",0],[0,0,0,0,0,0,0,0],[0,0,0,0,"gray",0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],["gray","gray","gray",0,"gray","gray","gray","gray"],["gray",0,0,0,"gray","gray","gray","gray"]],"targetMap":[null,null,null,null,null,[null,null,null,null,null,null,null,true],null,null,null,null,null,[null,null,null,null,null,true,null,false],[null,null,null,null,null,null,null,true],[null,null,null,null,null,true,null,true],[null,null,true,null,null,null,true,false],[true,null,false],null,[null,true,null,true]],"currentPiece":"L","currentRotation":0,"currentX":2,"currentY":0,"hold":"T","nextQueue":["J","I","Z","S","Z","T"],"canHold":true,"gameActive":true,"autoRefillNext":true}},
+  'daily_2': {'name': 'today.PCO', 'data': {"width":10,"height":10,"board":[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],["J","J","J",0,0,0,0,0,"S","S"],["O","O","J",0,0,0,0,"S","S","T"],["O","O","L",0,0,0,"Z","Z","T","T"],["L","L","L",0,0,0,0,"Z","Z","T"]],"targetMap":[null,null,null,null,[true,true,true,true,true,true,true,true,true,true],[true,true,true,true,true,true,true,true,true,true],[null,null,null,true,true,true,true,true],[null,null,null,true,true,true,true],[null,null,null,true,true,true],[null,null,null,true,true,true,true]],"currentPiece":"O","currentRotation":0,"currentX":4,"currentY":0,"hold":"I","nextQueue":["I","T","S","L","Z","J","O"],"canHold":true,"gameActive":true,"autoRefillNext":false}},
+};
+
+
+
+// 键盘控制
+let keyDelay = 100;
+let softDropSpeed = 100;
+let isHoldInProgress = false;
+let isPieceLocking = false; // 标记方块正在锁定过程中
+
+// 键位绑定配置
+let keyBindings = {
+  left: 'ArrowLeft',
+  right: 'ArrowRight',
+  rotateCW: 'ArrowUp',
+  rotateCCW: 'z',
+  rotate180: 'a',
+  softDrop: 'ArrowDown',
+  hardDrop: ' ',
+  hold: 'Shift'
+};
+
+let waitingForKey = null;
+
+const KEY_THRESHOLD = 50;
+const keyState = {
+  left: { pressed: false, lastTime: 0, interval: null },
+  right: { pressed: false, lastTime: 0, interval: null },
+  down: { pressed: false, lastTime: 0, interval: null },
+  up: { lastTime: 0 }
+};
+
+// 方块形状定义
+const SHAPES = {
+  I: [
+    [[0,0],[0,1],[0,2],[0,3]],
+    [[0,2],[1,2],[2,2],[3,2]],
+    [[2,0],[2,1],[2,2],[2,3]],
+    [[0,1],[1,1],[2,1],[3,1]]
+  ],
+  O: [
+    [[0,0],[0,1],[1,0],[1,1]]
+  ],
+  J: [    
+    [[0,0],[1,0],[1,1],[1,2]],       
+    [[0,0],[0,1],[1,0],[2,0]],     
+    [[0,0],[0,1],[0,2],[1,2]],
+    [[0,1],[1,1],[2,1],[2,0]]    
+  ],
+  L: [ 
+    [[0,2],[1,2],[1,1],[1,0]],
+    [[0,0],[1,0],[2,0],[2,1]], 
+    [[0,0],[0,1],[0,2],[1,0]],
+    [[0,0],[0,1],[1,1],[2,1]]
+  ],
+  Z: [
+    [[0,0],[0,1],[1,1],[1,2]], 
+    [[0,1],[1,1],[1,0],[2,0]]
+  ],
+  S: [
+    [[0,1],[0,2],[1,0],[1,1]], 
+    [[0,0],[1,0],[1,1],[2,1]]
+  ],
+  T: [
+    [[1,0],[1,1],[1,2],[0,1]],
+    [[0,1],[1,1],[2,1],[1,2]],
+    [[2,1],[1,0],[1,1],[1,2]],
+    [[0,1],[1,1],[2,1],[1,0]],
+  ]
+};
+
+const PALETTE = {
+  I: '#44EBDF', O: '#DEC843', T: '#A43D9A', S: '#67E634',
+  Z: '#ED1C24', J: '#2638B2', L: '#B46332'
+};
+
+// 踢墙表
+const KICK_TESTS = [
+  [0, 1], [0, 2], [1, 1], [-1, 1], [1, 2], [-1, 2],
+  [0, 0], [0, -1], [0, -2], [1, 0], [-1, 0], [2, 0],
+  [-2, 0], [1, -1], [-1, -1], [2, -1], [-2, -1], [2, 1],
+  [-2, 1], [1, -2], [-1, -2], [2, -2], [-2, -2]
+];
+
+// 180度旋转专用踢墙表（针对L和J方块）
+const KICK_TESTS_180 = [
+  [0, 0], [0, -1], [0, 1], [1, 0], [-1, 0], [1, -1], [-1, -1],
+  [0, -2], [0, 2], [1, 1], [-1, 1], [2, 0], [-2, 0],
+  [1, -2], [-1, -2], [2, -1], [-2, -1], [2, 1], [-2, 1]
+];
+
+let cellEls;
+
+// ===== 关卡加载 =====
+function loadLevel(levelNum) {
+  console.log(`Loading level ${levelNum}...`);
+  
+  if (levelNum < 1 || levelNum > MAX_LEVEL) {
+    alert(`Level ${levelNum} does not exist!`);
+    return;
+  }
+  
+  // 检查关卡是否解锁
+  if (levelNum > unlockedLevels) {
+    alert(`Level ${levelNum} is locked! Complete previous levels first.`);
+    return;
+  }
+  
+  const levelData = LEVELS[levelNum];
+  
+  if (!levelData) {
+    alert(`Level ${levelNum} not available yet!`);
+    return;
+  }
+  
+  console.log('Level data:', levelData);
+  
+  currentLevel = levelNum;
+  currentLevelData = levelData;
+  
+  // 更新UI，显示关卡名称
+  const levelName = LEVEL_NAMES[currentLevel] || `Level ${currentLevel}`;
+  document.getElementById('level-number').textContent = currentLevel;
+  document.getElementById('level-info').textContent = levelName;
+  document.getElementById('prevBtn').disabled = currentLevel <= 1;
+  document.getElementById('nextBtn').disabled = currentLevel >= unlockedLevels;
+  
+  // 应用关卡数据
+  applyLevelData(levelData);
+  
+  console.log(`Level ${currentLevel} loaded successfully`);
+}
+
+function loadDailyChallenge(challengeId) {
+  console.log('Loading Daily Challenge...');
+  
+  // 如果没有指定ID，显示选择界面
+  if (!challengeId) {
+    showDailyChallengeSelect();
+    return;
+  }
+  
+  const challenge = DAILY_CHALLENGES[challengeId];
+  
+  if (!challenge) {
+    alert('Daily Challenge not available!');
+    return;
+  }
+  
+  isDailyChallenge = true;
+  returnLevel = currentLevel;
+  currentLevel = challengeId;
+  currentLevelData = challenge.data;
+  
+  // 更新UI
+  document.getElementById('level-number').textContent = '🌟';
+  document.getElementById('level-info').textContent = challenge.name;
+  
+  // 改变按钮
+  document.getElementById('prevBtn').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'none';
+  const selectBtn = document.querySelector('button[onclick*="showLevelSelect"]');
+  if (selectBtn) {
+    selectBtn.textContent = '⬅️ Quit';
+    selectBtn.onclick = () => { quitDailyChallenge(); selectBtn.blur(); };
+  }
+  
+  // 应用关卡数据
+  applyLevelData(challenge.data);
+  
+  console.log('Daily Challenge loaded successfully');
+}
+
+function quitDailyChallenge() {
+  isDailyChallenge = false;
+  loadLevel(returnLevel);
+  
+  // 恢复按钮
+  document.getElementById('prevBtn').style.display = 'inline-block';
+  document.getElementById('nextBtn').style.display = 'inline-block';
+  const selectBtn = document.querySelector('button[onclick*="quitDailyChallenge"]');
+  if (selectBtn) {
+    selectBtn.textContent = 'Select Level';
+    selectBtn.onclick = () => { showLevelSelect(); selectBtn.blur(); };
+  }
+}
+
+function showDailyChallengeSelect() {
+  const overlay = document.getElementById('levelSelectOverlay');
+  const grid = document.getElementById('levelGrid');
+  
+  grid.innerHTML = '<h3 style="grid-column: 1/-1; color: #f90;">Daily Challenges</h3>';
+  
+  for (const [id, challenge] of Object.entries(DAILY_CHALLENGES)) {
+    const btn = document.createElement('button');
+    btn.className = 'level-button';
+    btn.textContent = challenge.name;
+    btn.onclick = () => {
+      loadDailyChallenge(id);
+      hideLevelSelect();
+    };
+    grid.appendChild(btn);
+  }
+  
+  overlay.style.display = 'flex';
+}
+
+function applyLevelData(levelData) {
+  console.log('Applying level data:', levelData);
+  
+  // 更新版面大小
+  COLS = levelData.width;
+  ROWS = levelData.height;
+  
+  console.log(`Board size: ${COLS}x${ROWS}`);
+  
+  // 更新棋盘CSS
+  const boardEl = document.getElementById('board');
+  if (!boardEl) {
+    console.error('Board element not found!');
+    return;
+  }
+  
+  // 计算最佳格子大小，确保正方形
+  const availableWidth = window.innerWidth - 480; // 减去左右面板和间距
+  const availableHeight = window.innerHeight - 80; // 减去padding
+  
+  const maxCellWidth = (availableWidth - 20) / COLS; // 减去padding和gap
+  const maxCellHeight = (availableHeight - 20) / ROWS;
+  
+  // 选择较小的尺寸确保正方形
+  const cellSize = Math.min(maxCellWidth, maxCellHeight, 35); // 最大35px
+  
+  const boardWidth = COLS * cellSize + (COLS - 1) * 2 + 16; // gap + padding
+  const boardHeight = ROWS * cellSize + (ROWS - 1) * 2 + 16;
+  
+  boardEl.style.width = boardWidth + 'px';
+  boardEl.style.height = boardHeight + 'px';
+  boardEl.style.gridTemplateColumns = `repeat(${COLS}, ${cellSize}px)`;
+  boardEl.style.gridTemplateRows = `repeat(${ROWS}, ${cellSize}px)`;
+  
+  // 重新创建棋盘格子
+  cellEls = null;
+  boardEl.innerHTML = '';
+  cellEls = [];
+  for (let y = 0; y < ROWS; y++) {
+    cellEls[y] = [];
+    for (let x = 0; x < COLS; x++) {
+      const c = document.createElement('div');
+      c.className = 'cell';
+      boardEl.appendChild(c);
+      cellEls[y][x] = c;
+    }
+  }
+  
+  console.log(`Created ${ROWS * COLS} cells`);
+  
+  // 恢复游戏状态（使用深拷贝避免修改原始数据）
+  board = JSON.parse(JSON.stringify(levelData.board));
+  targetMap = JSON.parse(JSON.stringify(levelData.targetMap || []));
+  curr = levelData.currentPiece !== undefined ? levelData.currentPiece : null;
+  rot = levelData.currentRotation !== undefined ? levelData.currentRotation : 0;
+  x = levelData.currentX !== undefined ? levelData.currentX : Math.floor(COLS / 2);
+  y = levelData.currentY !== undefined ? levelData.currentY : 0;
+  hold = levelData.hold !== undefined ? levelData.hold : null;
+  nextQ = [...(levelData.nextQueue || [])];
+  canHold = levelData.canHold !== undefined ? levelData.canHold : true;
+  gameActive = true;
+  
+  // 重置hold和锁定状态
+  isHoldInProgress = false;
+  isPieceLocking = false;
+  
+  // 重置统计
+  playerCombo = 0;
+  
+  // 重绘
+  console.log('Drawing board...');
+  drawAll();
+  console.log('Level applied successfully');
+}
+
+function restartLevel() {
+  if (currentLevelData) {
+    applyLevelData(currentLevelData);
+  }
+}
+
+// ===== 绘制函数 =====
+function drawBoard() {
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      const isTarget = targetMap[y] && targetMap[y][x];
+      
+      // 先设置背景色
+      if (board[y][x] === 'gray') {
+        cellEls[y][x].style.background = '#666';
+      } else if (board[y][x] && board[y][x] !== 'gray') {
+        cellEls[y][x].style.background = PALETTE[board[y][x]];
+      } else {
+        cellEls[y][x].style.background = '#222';
+      }
+      
+      // 然后设置边框
+      if (isTarget) {
+        // 如果目标位置已经被非灰色方块覆盖，不显示边框
+        if (board[y][x] && board[y][x] !== 'gray') {
+          cellEls[y][x].style.border = 'none';
+        } else {
+          // 空的目标位置显示黄色虚线边框
+          cellEls[y][x].style.border = '2px dashed #ff0';
+          cellEls[y][x].style.boxSizing = 'border-box';
+        }
+      } else {
+        cellEls[y][x].style.border = 'none';
+      }
+    }
+  }
+  
+  if (curr && gameActive) {
+    const cells = getCurrentCells();
+    cells.forEach(([cy, cx]) => {
+      if (cy >= 0 && cy < ROWS && cx >= 0 && cx < COLS) {
+        cellEls[cy][cx].style.background = PALETTE[curr];
+        
+        // 如果当前位置是目标位置，显示绿色边框
+        const isTarget = targetMap[cy] && targetMap[cy][cx];
+        if (isTarget) {
+          cellEls[cy][cx].style.border = '2px dashed #0f0';
+          cellEls[cy][cx].style.boxSizing = 'border-box';
+        } else {
+          cellEls[cy][cx].style.border = 'none';
+        }
+      }
+    });
+  }
+  
+  updateTargetStatus();
+}
+
+function drawGhost() {
+  document.querySelectorAll('.ghost').forEach(g => g.remove());
+  
+  if (!curr || !gameActive) return;
+  
+  const ghostY = calculateGhostY();
+  if (ghostY === y) return;
+  
+  const cells = SHAPES[curr][rot].map(([dy, dx0]) => [ghostY + dy, x + dx0]);
+  const boardEl = document.getElementById('board');
+  
+  // 获取当前格子大小
+  const boardStyle = window.getComputedStyle(boardEl);
+  const gridCols = boardStyle.gridTemplateColumns.split(' ');
+  const cellSize = parseFloat(gridCols[0]);
+  
+  cells.forEach(([cy, cx]) => {
+    if (cy >= 0 && cy < ROWS && cx >= 0 && cx < COLS && (!board[cy] || board[cy][cx] === 0)) {
+      const g = document.createElement('div');
+      g.className = 'ghost';
+      g.style.position = 'absolute';
+      g.style.left = (8 + cx * (cellSize + 2)) + 'px';
+      g.style.top = (8 + cy * (cellSize + 2)) + 'px';
+      g.style.width = cellSize + 'px';
+      g.style.height = cellSize + 'px';
+      
+      // 检查是否在目标位置
+      const isTarget = targetMap[cy] && targetMap[cy][cx];
+      if (isTarget) {
+        // 在目标位置时使用绿色虚线边框
+        g.style.border = '2px dashed #0f0';
+      } else {
+        // 普通位置使用白色虚线边框
+        g.style.border = '2px dashed #fff';
+      }
+      
+      boardEl.appendChild(g);
+    }
+  });
+}
+
+function drawAll() {
+  drawBoard();
+  drawGhost();
+  drawSide();
+  updateStats();
+}
+
+function drawSide() {
+  const holdDiv = document.getElementById('hold');
+  holdDiv.innerHTML = '';
+  if (hold) {
+    const miniBoard = createMiniBoard(hold, 0);
+    holdDiv.appendChild(miniBoard);
+  } else {
+    holdDiv.textContent = '-';
+  }
+  
+  const nextDiv = document.getElementById('next');
+  nextDiv.innerHTML = '';
+  nextQ.slice(0, 5).forEach(piece => {
+    const miniBoard = createMiniBoard(piece, 0);
+    nextDiv.appendChild(miniBoard);
+  });
+}
+
+function createMiniBoard(pieceType, rotation) {
+  const miniBoard = document.createElement('div');
+  miniBoard.className = 'mini-board';
+  miniBoard.style.position = 'relative';
+  miniBoard.style.width = '50px';
+  miniBoard.style.height = '50px';
+  miniBoard.style.background = 'transparent';
+  
+  const cells = SHAPES[pieceType][rotation];
+  cells.forEach(([dy, dx]) => {
+    const cell = document.createElement('div');
+    cell.style.position = 'absolute';
+    cell.style.width = '10px';
+    cell.style.height = '10px';
+    cell.style.left = (dx * 11 + 5) + 'px';
+    cell.style.top = (dy * 11 + 5) + 'px';
+    cell.style.background = PALETTE[pieceType];
+    cell.style.border = '1px solid rgba(0,0,0,0.3)';
+    cell.style.borderRadius = '1px';
+    miniBoard.appendChild(cell);
+  });
+  
+  return miniBoard;
+}
+
+// ===== 游戏逻辑 =====
+function nextPiece() {
+  isPieceLocking = false; // 重置锁定标志
+  
+  if (nextQ.length === 0) {
+    if (hold !== null) {
+      curr = hold;
+      hold = null;
+      console.log('Took piece from hold (nextQ empty)');
+    } else {
+      gameActive = false;
+      curr = null;
+      console.log('No more pieces');
+      drawAll();
+      return;
+    }
+  } else {
+    curr = nextQ.shift();
+  }
+  
+  if (COLS === 3 && curr === 'I') {
+    rot = 1;
+  } else {
+    rot = 0;
+  }
+  
+  x = Math.floor((COLS - getShapeWidth()) / 2);
+  y = 0;
+  canHold = true;
+  
+  if (!isValidPosition()) {
+    gameActive = false;
+    alert('Game Over!');
+    return;
+  }
+  
+  drawAll();
+}
+
+function getCurrentCells() {
+  return SHAPES[curr][rot].map(([dy, dx0]) => [y + dy, x + dx0]);
+}
+
+function getCurrentCellsForPiece(piece, px, py, prot) {
+  return SHAPES[piece][prot].map(([dy, dx0]) => [py + dy, px + dx0]);
+}
+
+function getShapeWidth() {
+  const cells = SHAPES[curr][rot];
+  const xCoords = cells.map(([_, dx]) => dx);
+  return Math.max(...xCoords) - Math.min(...xCoords) + 1;
+}
+
+function isValidPosition(newX = x, newY = y, newRot = rot) {
+  const cells = SHAPES[curr][newRot].map(([dy, dx0]) => [newY + dy, newX + dx0]);
+  return cells.every(([cy, cx]) => 
+    cy >= 0 && cy < ROWS && cx >= 0 && cx < COLS && board[cy][cx] === 0
+  );
+}
+
+function calculateGhostY() {
+  let ghostY = y;
+  while (isValidPosition(x, ghostY + 1, rot)) {
+    ghostY++;
+  }
+  return ghostY;
+}
+
+function tryMove(dx) {
+  const newX = x + dx;
+  if (isValidPosition(newX, y, rot)) {
+    x = newX;
+    drawAll();
+  }
+}
+
+function moveToEdge(direction) {
+  // direction: -1 for left, 1 for right
+  while (isValidPosition(x + direction, y, rot)) {
+    x += direction;
+  }
+  drawAll();
+}
+
+function dropToBottom() {
+  // 直接降到底部（类似硬降但不锁定）
+  while (isValidPosition(x, y + 1, rot)) {
+    y++;
+  }
+  drawAll();
+}
+
+function tryRotateCW() { rotateWithKick(1); }
+function tryRotateCCW() { rotateWithKick(-1); }
+
+function rotateWithKick(dir) {
+  const len = SHAPES[curr].length;
+  const newRot = (rot + dir + len) % len;
+
+  console.log(`Trying to rotate ${curr} from ${rot} to ${newRot} at (${x},${y})`);
+
+  if (isValidPosition(x, y, newRot)) {
+    rot = newRot;
+    console.log('Direct rotation successful');
+    drawAll();
+    return;
+  }
+  
+  for (const [dx, dy] of KICK_TESTS) {
+    if (isValidPosition(x + dx, y + dy, newRot)) {
+      console.log(`Kick successful with offset (${dx},${dy})`);
+      x += dx;
+      y += dy;
+      rot = newRot;
+      drawAll();
+      return;
+    }
+  }
+  
+  console.log('Rotation failed - no valid position found');
+}
+
+function tryRotate180() {
+  const len = SHAPES[curr].length;
+  const newRot = (rot + 2) % len;
+  
+  const kickTests = (curr === 'L' || curr === 'J') ? KICK_TESTS_180 : KICK_TESTS;
+  
+  if (isValidPosition(x, y, newRot)) {
+    rot = newRot;
+    drawAll();
+    return;
+  }
+  
+  for (const [dx, dy] of kickTests) {
+    if (isValidPosition(x + dx, y + dy, newRot)) {
+      x += dx;
+      y += dy;
+      rot = newRot;
+      drawAll();
+      return;
+    }
+  }
+}
+
+function softDrop() {
+  if (isValidPosition(x, y + 1, rot)) {
+    y++;
+    drawAll();
+  }
+}
+
+function hardDrop() {
+  const ghostY = calculateGhostY();
+  y = ghostY;
+  isPieceLocking = true; // 标记开始锁定
+  lockPiece();
+}
+
+function doHold() {
+  // 如果方块正在锁定过程中，禁止hold操作
+  if (isPieceLocking) return;
+  
+  if (!curr && nextQ.length === 0 && hold !== null && gameActive) {
+    curr = hold;
+    hold = null;
+    
+    if (COLS === 3 && curr === 'I') {
+      rot = 1;
+    } else {
+      rot = 0;
+    }
+    
+    x = Math.floor((COLS - getShapeWidth()) / 2);
+    y = 0;
+    canHold = true;
+    
+    if (!isValidPosition()) {
+      gameActive = false;
+      alert('Game Over!');
+      return;
+    }
+    
+    drawAll();
+    return;
+  }
+  
+  if (!curr || !gameActive || !canHold || isHoldInProgress) return;
+  
+  if (nextQ.length === 0 && hold === null) {
+    return;
+  }
+  
+  isHoldInProgress = true;
+  canHold = true; // 禁止连续hold
+  
+  const currentPiece = curr;
+  
+  if (hold === null) {
+    hold = currentPiece;
+    nextPiece();
+  } else {
+    const temp = hold;
+    hold = currentPiece;
+    curr = temp;
+    
+    if (COLS === 3 && curr === 'I') {
+      rot = 1;
+    } else {
+      rot = 0;
+    }
+    
+    x = Math.floor((COLS - getShapeWidth()) / 2);
+    y = 0;
+    
+    if (!isValidPosition()) {
+      // 如果交换后的方块无法放置，恢复原状
+      hold = currentPiece;
+      curr = temp;
+      canHold = true; // 恢复canHold状态
+      gameActive = false;
+      alert('Game Over!');
+      isHoldInProgress = false;
+      return;
+    }
+  }
+  
+  drawAll();
+  isHoldInProgress = false;
+}
+
+function lockPiece() {
+  const lockedPiece = curr; // 保存要锁定的方块
+  curr = null; // 立即清空curr，防止在nextPiece调用前被hold
+  canHold = true; // 重置hold状态
+  
+  const cells = getCurrentCellsForPiece(lockedPiece, x, y, rot);
+  for (const [cy, cx] of cells) {
+    if (cy >= 0 && cy < ROWS && cx >= 0 && cx < COLS) {
+      board[cy][cx] = lockedPiece;
+    }
+  }
+  
+  const targetCompleted = checkTargetCompletion();
+  
+  let lines = 0;
+  for (let row = ROWS - 1; row >= 0; row--) {
+    let filled = true;
+    for (let col = 0; col < COLS; col++) {
+      if (board[row][col] === 0) {
+        filled = false;
+        break;
+      }
+    }
+    if (filled) {
+      lines++;
+      
+      // targetMap也要跟着下降
+      targetMap.splice(row, 1);
+      targetMap.unshift(null);
+      
+      board.splice(row, 1);
+      board.unshift(Array(COLS).fill(0));
+      row++;
+    }
+  }
+  
+  if (lines > 0) {
+    playerCombo++;
+    if (playerCombo > maxCombo) {
+      maxCombo = playerCombo;
+    }
+    // 只有combo >= 2时才显示特效
+    if (playerCombo >= 2) {
+      showComboEffect(playerCombo);
+    }
+  } else {
+    playerCombo = 0;
+  }
+  
+  const isAllClear = board.every(row => row.every(cell => cell === 0));
+  if (isAllClear) {
+    allClearCount++;
+    showAllClearEffect();
+  }
+  
+  drawBoard();
+  
+  if (targetCompleted) {
+    setTimeout(() => {
+      gameActive = false;
+      showLevelComplete();
+    }, 300);
+    return;
+  }
+  
+  setTimeout(() => {
+    nextPiece();
+  }, 100);
+}
+
+// ===== 目标点系统 =====
+function updateTargetStatus() {
+  let totalTargets = 0;
+  let coveredTargets = 0;
+  
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if (targetMap[y] && targetMap[y][x]) {
+        totalTargets++;
+        if (board[y][x] !== 0 && board[y][x] !== 'gray') {
+          coveredTargets++;
+        }
+      }
+    }
+  }
+  
+  const statusEl = document.getElementById('target-status');
+  if (statusEl) {
+    statusEl.textContent = `Targets: ${coveredTargets}/${totalTargets}`;
+  }
+  
+  return { totalTargets, coveredTargets };
+}
+
+function checkTargetCompletion() {
+  const { totalTargets, coveredTargets } = updateTargetStatus();
+  return totalTargets > 0 && coveredTargets === totalTargets;
+}
+
+// ===== 特效 =====
+function showComboEffect(combo) {
+  const existing = document.querySelector('.combo-display');
+  if (existing) existing.remove();
+  
+  const comboEl = document.createElement('div');
+  comboEl.className = 'combo-display';
+  comboEl.textContent = `${combo} COMBO!`;
+  document.body.appendChild(comboEl);
+  
+  setTimeout(() => comboEl.remove(), 1000);
+}
+
+function showAllClearEffect() {
+  const existing = document.querySelector('.all-clear-effect');
+  if (existing) existing.remove();
+  
+  const acEl = document.createElement('div');
+  acEl.className = 'all-clear-effect';
+  acEl.textContent = 'ALL CLEAR!';
+  document.body.appendChild(acEl);
+  
+  setTimeout(() => acEl.remove(), 2000);
+}
+
+// ===== 统计更新 =====
+function updateStats() {
+  document.getElementById('comboCount').textContent = playerCombo;
+  document.getElementById('maxCombo').textContent = maxCombo;
+  document.getElementById('allClearCount').textContent = allClearCount;
+}
+
+// ===== 控制设置 =====
+function updateVolumeDisplay() {
+  const value = parseInt(document.getElementById('volumeSlider').value);
+  document.getElementById('volumeValue').textContent = value;
+  const bgm = document.getElementById('bgm');
+  bgm.volume = value / 100;
+  saveSettings();
+}
+
+function updateDASDisplay() {
+  const value = parseInt(document.getElementById('dasSlider').value);
+  document.getElementById('dasValue').textContent = value === 0 ? 'Instant' : value;
+  keyDelay = value;
+  saveSettings();
+}
+
+function updateSoftDropDisplay() {
+  const value = parseInt(document.getElementById('softDropSlider').value);
+  document.getElementById('softDropValue').textContent = value === 0 ? 'Instant' : value;
+  softDropSpeed = value;
+  saveSettings();
+}
+
+function changeBGM() {
+  const bgm = document.getElementById('bgm');
+  const select = document.getElementById('bgmSelect');
+  const currentTime = bgm.currentTime;
+  bgm.src = select.value;
+  bgm.currentTime = currentTime;
+  bgm.play();
+  saveSettings();
+}
+
+function showSettings() {
+  document.getElementById('settingsOverlay').style.display = 'flex';
+  // 同步当前值
+  const bgm = document.getElementById('bgm');
+  document.getElementById('volumeSlider').value = Math.round(bgm.volume * 100);
+  
+  // 自动检测当前BGM
+  if (bgm.src.includes('ancients')) {
+    document.getElementById('bgmSelect').value = 'lib/bgm/ancients lagacy.mp3';
+  } else if (bgm.src.includes('strategy')) {
+    document.getElementById('bgmSelect').value = 'lib/bgm/strategy meeting.mp3';
+  } else if (bgm.src.includes('Zhoumetry')) {
+    document.getElementById('bgmSelect').value = 'lib/bgm/Zhoumetry.mp3';
+  } else {
+    document.getElementById('bgmSelect').value = 'lib/bgm/ancients lagacy.mp3'; // 默认
+  }
+  
+  document.getElementById('dasSlider').value = keyDelay;
+  document.getElementById('softDropSlider').value = softDropSpeed;
+  updateVolumeDisplay();
+  updateDASDisplay();
+  updateSoftDropDisplay();
+  updateKeybindingDisplay();
+}
+
+function hideSettings() {
+  // 应用设置
+  keyDelay = parseInt(document.getElementById('dasSlider').value);
+  softDropSpeed = parseInt(document.getElementById('softDropSlider').value);
+  document.getElementById('settingsOverlay').style.display = 'none';
+  
+  // 保存到localStorage
+  saveSettings();
+}
+
+function updateKeybindingDisplay() {
+  document.getElementById('keyLeft').textContent = keyBindings.left;
+  document.getElementById('keyRight').textContent = keyBindings.right;
+  document.getElementById('keyRotateCW').textContent = keyBindings.rotateCW;
+  document.getElementById('keyRotateCCW').textContent = keyBindings.rotateCCW;
+  document.getElementById('keyRotate180').textContent = keyBindings.rotate180;
+  document.getElementById('keySoftDrop').textContent = keyBindings.softDrop;
+  document.getElementById('keyHardDrop').textContent = keyBindings.hardDrop === ' ' ? 'Space' : keyBindings.hardDrop;
+  document.getElementById('keyHold').textContent = keyBindings.hold;
+}
+
+function rebindKey(action) {
+  waitingForKey = action;
+  const btn = document.getElementById(`key${action.charAt(0).toUpperCase() + action.slice(1)}`);
+  btn.textContent = 'Press any key...';
+  btn.style.background = '#f90';
+}
+
+function resetKeybindings() {
+  // 重置键位绑定
+  keyBindings = {
+    left: 'ArrowLeft',
+    right: 'ArrowRight',
+    rotateCW: 'ArrowUp',
+    rotateCCW: 'z',
+    rotate180: 'a',
+    softDrop: 'ArrowDown',
+    hardDrop: ' ',
+    hold: 'Shift'
+  };
+  
+  // 重置时间设置
+  keyDelay = 100;
+  softDropSpeed = 100;
+  
+  // 更新界面显示
+  updateKeybindingDisplay();
+  document.getElementById('dasSlider').value = keyDelay;
+  document.getElementById('softDropSlider').value = softDropSpeed;
+  updateDASDisplay();
+  updateSoftDropDisplay();
+  
+  // 保存设置
+  saveSettings();
+}
+
+function saveSettings() {
+  const bgm = document.getElementById('bgm');
+  localStorage.setItem('ZhoumetrySettings', JSON.stringify({
+    keyDelay,
+    softDropSpeed,
+    keyBindings,
+    volume: bgm.volume,
+    bgmSrc: bgm.src
+  }));
+}
+
+function loadSettings() {
+  const saved = localStorage.getItem('ZhoumetrySettings');
+  if (saved) {
+    const settings = JSON.parse(saved);
+    keyDelay = settings.keyDelay || 100;
+    softDropSpeed = settings.softDropSpeed || 100;
+    if (settings.keyBindings) {
+      keyBindings = settings.keyBindings;
+    }
+    
+    // 加载音乐设置
+    const bgm = document.getElementById('bgm');
+    if (settings.volume !== undefined) {
+      bgm.volume = settings.volume;
+    }
+    if (settings.bgmSrc) {
+      bgm.src = settings.bgmSrc;
+    }
+  }
+}
+
+// ===== 键盘控制 =====
+function matchKey(eventKey, bindingKey) {
+  if (bindingKey === eventKey) return true;
+  if (bindingKey.toLowerCase() === eventKey.toLowerCase()) return true;
+  return false;
+}
+
+function handleKeyDown(e) {
+  // 处理键位重绑定
+  if (waitingForKey) {
+    e.preventDefault();
+    keyBindings[waitingForKey] = e.key;
+    updateKeybindingDisplay();
+    const btn = document.getElementById(`key${waitingForKey.charAt(0).toUpperCase() + waitingForKey.slice(1)}`);
+    btn.style.background = '#333';
+    waitingForKey = null;
+    saveSettings();
+    return;
+  }
+  
+  // Hold特殊处理（当没有当前方块但有hold时）
+  if (matchKey(e.key, keyBindings.hold) && !curr && gameActive && !isHoldInProgress && hold !== null) {
+    const currentTime = Date.now();
+    if (currentTime - keyState.up.lastTime > KEY_THRESHOLD) {
+      keyState.up.lastTime = currentTime;
+      doHold();
+    }
+    return;
+  }
+  
+  if (!curr || !gameActive || isHoldInProgress) return;
+  
+  const currentTime = Date.now();
+  
+  // 左移
+  if (matchKey(e.key, keyBindings.left)) {
+    e.preventDefault();
+    if (!keyState.left.pressed && currentTime - keyState.left.lastTime > KEY_THRESHOLD) {
+      keyState.left.pressed = true;
+      keyState.left.lastTime = currentTime;
+      
+      if (keyDelay === 0) {
+        moveToEdge(-1);
+        keyState.left.pressed = false; // DAS=0是瞬间移动，立即重置
+      } else {
+        tryMove(-1);
+        keyState.left.interval = setInterval(() => {
+          if (keyState.left.pressed) {
+            tryMove(-1);
+          }
+        }, keyDelay);
+      }
+    }
+  }
+  
+  // 右移
+  if (matchKey(e.key, keyBindings.right)) {
+    e.preventDefault();
+    if (!keyState.right.pressed && currentTime - keyState.right.lastTime > KEY_THRESHOLD) {
+      keyState.right.pressed = true;
+      keyState.right.lastTime = currentTime;
+      
+      if (keyDelay === 0) {
+        moveToEdge(1);
+        keyState.right.pressed = false; // DAS=0是瞬间移动，立即重置
+      } else {
+        tryMove(1);
+        keyState.right.interval = setInterval(() => {
+          if (keyState.right.pressed) {
+            tryMove(1);
+          }
+        }, keyDelay);
+      }
+    }
+  }
+  
+  // 顺时针旋转
+  if (matchKey(e.key, keyBindings.rotateCW)) {
+    if (currentTime - keyState.up.lastTime > KEY_THRESHOLD) {
+      keyState.up.lastTime = currentTime;
+      tryRotateCW();
+    }
+  }
+  
+  // 逆时针旋转
+  if (matchKey(e.key, keyBindings.rotateCCW)) {
+    if (currentTime - keyState.up.lastTime > KEY_THRESHOLD) {
+      keyState.up.lastTime = currentTime;
+      tryRotateCCW();
+    }
+  }
+  
+  // 180度旋转
+  if (matchKey(e.key, keyBindings.rotate180)) {
+    if (currentTime - keyState.up.lastTime > KEY_THRESHOLD) {
+      keyState.up.lastTime = currentTime;
+      tryRotate180();
+    }
+  }
+  
+  // 软降
+  if (matchKey(e.key, keyBindings.softDrop)) {
+    if (!keyState.down.pressed && currentTime - keyState.down.lastTime > KEY_THRESHOLD) {
+      keyState.down.pressed = true;
+      keyState.down.lastTime = currentTime;
+      
+      if (softDropSpeed === 0) {
+        // Instant模式：直接降到底部，但不设置interval（因为已经到底了）
+        dropToBottom();
+        // 立即重置按键状态，因为instant drop是一次性的
+        keyState.down.pressed = false;
+      } else {
+        softDrop();
+        keyState.down.interval = setInterval(() => {
+          if (keyState.down.pressed) {
+            softDrop();
+          }
+        }, softDropSpeed);
+      }
+    }
+  }
+  
+  // 硬降
+  if (matchKey(e.key, keyBindings.hardDrop)) {
+    e.preventDefault();
+    if (currentTime - keyState.down.lastTime > KEY_THRESHOLD) {
+      keyState.down.lastTime = currentTime;
+      hardDrop();
+    }
+  }
+  
+  // Hold
+  if (matchKey(e.key, keyBindings.hold)) {
+    if (currentTime - keyState.up.lastTime > KEY_THRESHOLD) {
+      keyState.up.lastTime = currentTime;
+      doHold();
+    }
+  }
+}
+
+function handleKeyUp(e) {
+  if (matchKey(e.key, keyBindings.left)) {
+    keyState.left.pressed = false;
+    if (keyState.left.interval) {
+      clearInterval(keyState.left.interval);
+      keyState.left.interval = null;
+    }
+  }
+  
+  if (matchKey(e.key, keyBindings.right)) {
+    keyState.right.pressed = false;
+    if (keyState.right.interval) {
+      clearInterval(keyState.right.interval);
+      keyState.right.interval = null;
+    }
+  }
+  
+  if (matchKey(e.key, keyBindings.softDrop)) {
+    keyState.down.pressed = false;
+    if (keyState.down.interval) {
+      clearInterval(keyState.down.interval);
+      keyState.down.interval = null;
+    }
+  }
+}
+
+// ===== 存档系统 =====
+function saveProgress() {
+  localStorage.setItem('ZhoumetryLevelProgress', JSON.stringify({
+    unlockedLevels,
+    unlockedChapters
+  }));
+  console.log(`Progress saved: ${unlockedLevels} levels, ${unlockedChapters} chapters unlocked`);
+}
+
+function loadProgress() {
+  // 检查是否开启全部解锁模式
+  if (UNLOCK_ALL_LEVELS === 1) {
+    unlockedLevels = MAX_LEVEL;
+    unlockedChapters = 3; // 解锁所有章节
+    console.log('🔓 All levels unlocked mode enabled!');
+    return;
+  }
+  
+  const saved = localStorage.getItem('ZhoumetryLevelProgress');
+  if (saved) {
+    try {
+      const progress = JSON.parse(saved);
+      unlockedLevels = progress.unlockedLevels || 1;
+      unlockedChapters = progress.unlockedChapters || 1;
+      console.log(`Progress loaded: ${unlockedLevels} levels, ${unlockedChapters} chapters unlocked`);
+    } catch (e) {
+      // 兼容旧格式
+      unlockedLevels = parseInt(saved);
+      unlockedChapters = 1;
+    }
+  } else {
+    unlockedLevels = 1;
+    unlockedChapters = 1;
+    console.log('No saved progress, starting from level 1');
+  }
+  
+  // 加载自动下一关设置
+  const autoNextSaved = localStorage.getItem('ZhoumetryAutoNext');
+  if (autoNextSaved) {
+    autoNextLevel = autoNextSaved === 'true';
+  }
+}
+
+function saveAutoNextSetting() {
+  autoNextLevel = document.getElementById('autoNextLevel').checked;
+  localStorage.setItem('ztrisAutoNext', autoNextLevel.toString());
+  console.log(`Auto next level: ${autoNextLevel}`);
+}
+
+function unlockNextLevel() {
+  if (currentLevel >= unlockedLevels && currentLevel < MAX_LEVEL) {
+    unlockedLevels = currentLevel + 1;
+    
+    // 检查是否解锁新章节
+    for (const [id, chapter] of Object.entries(CHAPTERS)) {
+      const chapterNum = parseInt(id);
+      const lastLevelInChapter = chapter.levels[chapter.levels.length - 1];
+      
+      // 如果刚通过了某章节的最后一关，解锁下一章节
+      if (currentLevel === lastLevelInChapter && chapterNum >= unlockedChapters) {
+        unlockedChapters = chapterNum + 1;
+        console.log(`Chapter ${unlockedChapters} unlocked!`);
+        break;
+      }
+    }
+    
+    saveProgress();
+    console.log(`Level ${unlockedLevels} unlocked!`);
+  }
+}
+
+function resetProgress() {
+  if (confirm('Are you sure you want to reset all progress? This will lock all levels and chapters except the first one.')) {
+    unlockedLevels = 1;
+    unlockedChapters = 1;
+    saveProgress();
+    loadLevel(1);
+    alert('Progress reset! All levels and chapters except the first one are now locked.');
+  }
+}
+
+// ===== UI控制函数 =====
+function showLevelComplete() {
+  const overlay = document.getElementById('levelCompleteOverlay');
+  const message = document.getElementById('completeMessage');
+  const nextBtn = document.getElementById('nextLevelBtn');
+  const autoNextCheckbox = document.getElementById('autoNextLevel');
+  
+  // 同步勾选框状态
+  autoNextCheckbox.checked = autoNextLevel;
+  
+  // 如果是每日挑战，不解锁下一关
+  if (currentLevel === 'daily') {
+    message.textContent = '🌟 Daily Challenge Complete!';
+    nextBtn.style.display = 'none';
+    autoNextCheckbox.parentElement.style.display = 'none';
+  } else {
+    // 解锁下一关
+    unlockNextLevel();
+    
+    if (currentLevel < MAX_LEVEL) {
+      message.textContent = `Level ${currentLevel} (${LEVEL_NAMES[currentLevel]}) Complete!`;
+      nextBtn.style.display = 'inline-block';
+      autoNextCheckbox.parentElement.style.display = 'block';
+      
+      // 如果开启了自动下一关，延迟1秒后自动进入
+      if (autoNextLevel) {
+        setTimeout(() => {
+          if (overlay.style.display === 'flex') {
+            nextLevelFromComplete();
+          }
+        }, 0);
+      }
+    } else {
+      message.textContent = '🏆 All Levels Complete!';
+      nextBtn.style.display = 'none';
+      autoNextCheckbox.parentElement.style.display = 'none';
+    }
+  }
+  
+  overlay.style.display = 'flex';
+}
+
+function hideLevelComplete() {
+  document.getElementById('levelCompleteOverlay').style.display = 'none';
+}
+
+function nextLevelFromComplete() {
+  hideLevelComplete();
+  if (currentLevel < MAX_LEVEL) {
+    loadLevel(currentLevel + 1);
+  }
+}
+
+function showLevelSelect(chapterId) {
+  const overlay = document.getElementById('levelSelectOverlay');
+  const grid = document.getElementById('levelGrid');
+  
+  grid.innerHTML = '';
+  
+  // 如果没有指定章节，显示章节选择
+  if (!chapterId) {
+    grid.innerHTML = '<h3 style="grid-column: 1/-1; color: #4a4; margin-bottom: 10px;">Select Chapter</h3>';
+    
+    for (const [id, chapter] of Object.entries(CHAPTERS)) {
+      const chapterNum = parseInt(id);
+      const btn = document.createElement('button');
+      btn.className = 'level-button';
+      btn.style.fontSize = '16px';
+      btn.style.padding = '20px';
+      
+      // 检查章节是否解锁
+      const chapterLocked = chapterNum > unlockedChapters;
+      
+      if (chapterLocked) {
+        btn.classList.add('locked');
+        btn.textContent = `🔒 ${chapter.name}`;
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+      } else {
+        btn.textContent = chapter.name;
+        btn.onclick = () => {
+          showLevelSelect(chapterNum);
+        };
+      }
+      
+      grid.appendChild(btn);
+    }
+    
+    overlay.style.display = 'flex';
+    return;
+  }
+  
+  // 显示指定章节的关卡
+  const chapter = CHAPTERS[chapterId];
+  if (!chapter) return;
+  
+  grid.innerHTML = `
+    <div style="grid-column: 1/-1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <button onclick="showLevelSelect(); event.stopPropagation();" style="background: #555; padding: 10px 20px;">⬅️ Back</button>
+      <h3 style="color: #4a4; margin: 0;">${chapter.name}</h3>
+      <div style="width: 100px;"></div>
+    </div>
+  `;
+  
+  for (const levelNum of chapter.levels) {
+    const btn = document.createElement('button');
+    btn.className = 'level-button';
+    
+    // 从LEVEL_NAMES获取关卡名
+    const levelName = LEVEL_NAMES[levelNum] || `Level ${levelNum}`;
+    
+    if (levelNum > unlockedLevels) {
+      // 锁定的关卡
+      btn.classList.add('locked');
+      btn.textContent = `${levelNum}. 🔒 ${levelName}`;
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+    } else {
+      // 解锁的关卡
+      if (levelNum === currentLevel) btn.classList.add('current');
+      btn.textContent = `${levelNum}. ${levelName}`;
+      btn.onclick = () => {
+        loadLevel(levelNum);
+        hideLevelSelect();
+      };
+    }
+    
+    grid.appendChild(btn);
+  }
+  
+  overlay.style.display = 'flex';
+}
+
+function hideLevelSelect() {
+  document.getElementById('levelSelectOverlay').style.display = 'none';
+}
+
+// ===== 移动端控制 =====
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+         (window.innerWidth <= 768);
+}
+
+function initMobileControls() {
+  const mobileControls = document.getElementById('mobileControls');
+  if (!isMobileDevice()) {
+    mobileControls.style.display = 'none';
+    return;
+  }
+  
+  mobileControls.style.display = 'block';
+  
+  // 摇杆控制
+  const joystickArea = document.getElementById('joystickArea');
+  const joystickKnob = document.getElementById('joystickKnob');
+  let joystickActive = false;
+  let joystickInterval = null;
+  let currentDirection = null;
+  
+  joystickArea.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    joystickActive = true;
+    updateJoystick(e.touches[0]);
+  });
+  
+  joystickArea.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (joystickActive) {
+      updateJoystick(e.touches[0]);
+    }
+  });
+  
+  joystickArea.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    joystickActive = false;
+    joystickKnob.style.transform = 'translate(-50%, -50%)';
+    currentDirection = null;
+    if (joystickInterval) {
+      clearInterval(joystickInterval);
+      joystickInterval = null;
+    }
+  });
+  
+  function updateJoystick(touch) {
+    const rect = joystickArea.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const deltaX = touch.clientX - centerX;
+    const deltaY = touch.clientY - centerY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const maxDistance = rect.width / 2 - 30;
+    
+    // 限制摇杆范围
+    const limitedDistance = Math.min(distance, maxDistance);
+    const angle = Math.atan2(deltaY, deltaX);
+    const knobX = Math.cos(angle) * limitedDistance;
+    const knobY = Math.sin(angle) * limitedDistance;
+    
+    joystickKnob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
+    
+    // 判断方向
+    let newDirection = null;
+    if (distance > 20) {
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        newDirection = deltaX > 0 ? 'right' : 'left';
+      } else {
+        newDirection = deltaY > 0 ? 'down' : null;
+      }
+    }
+    
+    // 执行移动
+    if (newDirection !== currentDirection) {
+      currentDirection = newDirection;
+      if (joystickInterval) {
+        clearInterval(joystickInterval);
+        joystickInterval = null;
+      }
+      
+      if (currentDirection === 'left') {
+        tryMove(-1);
+        joystickInterval = setInterval(() => tryMove(-1), keyDelay || 100);
+      } else if (currentDirection === 'right') {
+        tryMove(1);
+        joystickInterval = setInterval(() => tryMove(1), keyDelay || 100);
+      } else if (currentDirection === 'down') {
+        softDrop();
+        joystickInterval = setInterval(() => softDrop(), softDropSpeed || 100);
+      }
+    }
+  }
+  
+  // 按钮控制
+  document.getElementById('rotateCWBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    tryRotateCW();
+  });
+  
+  document.getElementById('rotateCCWBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    tryRotateCCW();
+  });
+  
+  document.getElementById('rotate180Btn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    tryRotate180();
+  });
+  
+  document.getElementById('holdBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    doHold();
+  });
+  
+  document.getElementById('hardDropBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    hardDrop();
+  });
+}
+
+// ===== 初始化 =====
+window.onload = () => {
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keyup', handleKeyUp);
+  
+  // 初始化移动端控制
+  initMobileControls();
+  
+  // 背景音乐
+  const bgm = document.getElementById('bgm');
+  bgm.volume = 0.3; // 设置音量为30%
+  
+  // 尝试播放音乐（处理浏览器自动播放限制）
+  const playBGM = () => {
+    bgm.play().catch(err => {
+      console.log('BGM autoplay blocked, waiting for user interaction');
+      // 用户第一次交互时播放
+      document.addEventListener('click', () => {
+        bgm.play();
+      }, { once: true });
+    });
+  };
+  playBGM();
+  
+  // 加载设置
+  loadSettings();
+  
+  // 加载存档
+  loadProgress();
+  
+  // 添加窗口大小改变监听器
+  window.addEventListener('resize', () => {
+    if (currentLevelData) {
+      // 重新计算游戏板尺寸
+      const boardEl = document.getElementById('board');
+      const availableWidth = window.innerWidth - 480;
+      const availableHeight = window.innerHeight - 80;
+      
+      const maxCellWidth = (availableWidth - 20) / COLS;
+      const maxCellHeight = (availableHeight - 20) / ROWS;
+      const cellSize = Math.min(maxCellWidth, maxCellHeight, 35);
+      
+      const boardWidth = COLS * cellSize + (COLS - 1) * 2 + 16;
+      const boardHeight = ROWS * cellSize + (ROWS - 1) * 2 + 16;
+      
+      boardEl.style.width = boardWidth + 'px';
+      boardEl.style.height = boardHeight + 'px';
+      boardEl.style.gridTemplateColumns = `repeat(${COLS}, ${cellSize}px)`;
+      boardEl.style.gridTemplateRows = `repeat(${ROWS}, ${cellSize}px)`;
+      
+      // 重新绘制
+      drawAll();
+    }
+  });
+  
+  // 加载第一关
+  loadLevel(1);
+};
+</script>
+</body>
+</html>

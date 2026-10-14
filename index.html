@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Zhoumetry - Refactored Version</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 背景音乐 -->
+<audio id="bgm" loop autoplay>
+  <source src="lib/bgm/ancients lagacy.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Left Panel: Level Info, Hold, Next -->
+<div id="left-panel">
+  <div class="panel-section">
+    <h3>Level <span id="level-number">1</span></h3>
+    <div id="level-info">welcome to Zhoumetry</div>
+    <div id="target-status">Targets: 0/0</div>
+  </div>
+  
+  <div class="panel-section">
+    <h3>Hold</h3>
+    <div id="hold" class="hold"></div>
+  </div>
+  
+  <div class="panel-section">
+    <h3>Next</h3>
+    <div id="next" class="next"></div>
+  </div>
+  
+  <div class="panel-section stats">
+    <h3>Statistics</h3>
+    <div>Combo: <span id="comboCount">0</span></div>
+    <div>Max Combo: <span id="maxCombo">0</span></div>
+    <div>All Clears: <span id="allClearCount">0</span></div>
+  </div>
+</div>
+
+<!-- Center: Game Board -->
+<div id="board"></div>
+
+<!-- Right Panel: Buttons -->
+<div id="right-panel">
+  <div class="panel-section">
+    <button onclick="game.restartLevel(); this.blur();">Restart Level</button>
+    <button onclick="game.loadLevel(game.currentLevel - 1); this.blur();" id="prevBtn">Previous Level</button>
+    <button onclick="game.loadLevel(game.currentLevel + 1); this.blur();" id="nextBtn">Next Level</button>
+    <button onclick="ui.showLevelSelect(); this.blur();">Select Level</button>
+    <button onclick="game.loadDailyChallenge(); this.blur();" style="background: #f90; margin-top: 10px;">🌟 Daily Challenge</button>
+    <button onclick="ui.showSettings(); this.blur();" style="background: #48a; margin-top: 5px;">⚙️ Settings</button>
+    <button onclick="game.resetProgress(); this.blur();" style="background: #a44; margin-top: 5px;">Reset Progress</button>
+  </div>
+</div>
+
+<!-- 通关UI -->
+<div id="levelCompleteOverlay" class="level-complete-overlay" style="display: none;">
+  <div class="level-complete-box">
+    <h2>🎉 Level Complete!</h2>
+    <p id="completeMessage">All targets covered!</p>
+    <button onclick="game.restartLevel(); ui.hideLevelComplete(); this.blur();">Restart</button>
+    <button onclick="ui.nextLevelFromComplete(); this.blur();" id="nextLevelBtn">Next Level</button>
+    <button onclick="ui.showLevelSelect(); ui.hideLevelComplete(); this.blur();">Level Select</button>
+    <div style="margin-top: 15px;">
+      <label style="cursor: pointer; font-size: 14px;">
+        <input type="checkbox" id="autoNextLevel" onchange="game.saveAutoNextSetting()"> 
+        Auto proceed to next level
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- 关卡选择UI -->
+<div id="levelSelectOverlay" class="level-select-overlay" style="display: none;">
+  <div class="level-select-box">
+    <h2>Select Level</h2>
+    <div class="level-grid" id="levelGrid"></div>
+    <button onclick="ui.hideLevelSelect(); this.blur();">Close</button>
+  </div>
+</div>
+
+<!-- 设置UI -->
+<div id="settingsOverlay" class="level-select-overlay" style="display: none;">
+  <div class="level-select-box" style="max-width: 700px;">
+    <h2>⚙️ Settings</h2>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; padding: 20px; text-align: left;">
+      <!-- 左列：音频和时间设置 -->
+      <div>
+        <h3 style="color: #4a4; margin-bottom: 15px;">Audio</h3>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px;">Music Volume: <span id="volumeValue">30</span>%</label>
+          <input type="range" id="volumeSlider" min="0" max="100" value="30" style="width: 100%;" oninput="ui.updateVolumeDisplay()">
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+          <label style="display: block; margin-bottom: 5px;">Background Music:</label>
+          <select id="bgmSelect" style="width: 100%; padding: 8px; background: #333; color: #eee; border: 1px solid #555; border-radius: 3px;" onchange="ui.changeBGM()">
+            <option value="lib/bgm/ancients lagacy.mp3">Ancients Lagacy</option>
+            <option value="lib/bgm/strategy meeting.mp3">Strategy Meeting</option>
+            <option value="lib/bgm/Zhoumetry.mp3">Zhoumetry</option>
+          </select>
+        </div>
+        
+        <h3 style="color: #4a4; margin-bottom: 15px;">Timing</h3>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px;">DAS (Delayed Auto Shift): <span id="dasValue">100</span>ms</label>
+          <input type="range" id="dasSlider" min="0" max="200" value="100" style="width: 100%;" oninput="ui.updateDASDisplay()">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px;">Soft Drop Speed: <span id="softDropValue">100</span>ms</label>
+          <input type="range" id="softDropSlider" min="0" max="500" value="100" style="width: 100%;" oninput="ui.updateSoftDropDisplay()">
+        </div>
+      </div>
+      
+      <!-- 右列：键位绑定 -->
+      <div>
+        <h3 style="color: #4a4; margin-bottom: 15px;">Key Bindings</h3>
+        <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px; margin-bottom: 20px;">
+          <span>Move Left:</span>
+          <button id="keyLeft" onclick="ui.rebindKey('left')" style="background: #333; padding: 6px; font-size: 12px;">ArrowLeft</button>
+          
+          <span>Move Right:</span>
+          <button id="keyRight" onclick="ui.rebindKey('right')" style="background: #333; padding: 6px; font-size: 12px;">ArrowRight</button>
+          
+          <span>Rotate CW:</span>
+          <button id="keyRotateCW" onclick="ui.rebindKey('rotateCW')" style="background: #333; padding: 6px; font-size: 12px;">ArrowUp</button>
+          
+          <span>Rotate CCW:</span>
+          <button id="keyRotateCCW" onclick="ui.rebindKey('rotateCCW')" style="background: #333; padding: 6px; font-size: 12px;">Z</button>
+          
+          <span>Rotate 180°:</span>
+          <button id="keyRotate180" onclick="ui.rebindKey('rotate180')" style="background: #333; padding: 6px; font-size: 12px;">A</button>
+          
+          <span>Soft Drop:</span>
+          <button id="keySoftDrop" onclick="ui.rebindKey('softDrop')" style="background: #333; padding: 6px; font-size: 12px;">ArrowDown</button>
+          
+          <span>Hard Drop:</span>
+          <button id="keyHardDrop" onclick="ui.rebindKey('hardDrop')" style="background: #333; padding: 6px; font-size: 12px;">Space</button>
+          
+          <span>Hold:</span>
+          <button id="keyHold" onclick="ui.rebindKey('hold')" style="background: #333; padding: 6px; font-size: 12px;">Shift</button>
+        </div>
+        
+        <button onclick="ui.resetKeybindings(); this.blur();" style="background: #a44; width: 100%; margin-bottom: 10px; padding: 8px;">Reset All to Default</button>
+      </div>
+    </div>
+    
+    <button onclick="ui.hideSettings(); this.blur();" style="margin: 10px;">Close</button>
+  </div>
+</div>
+
+<!-- 移动端触摸控制 -->
+<div id="mobileControls" style="display: none;">
+  <!-- 左侧摇杆区域 -->
+  <div id="joystickArea" style="position: fixed; top: 50%; left: 60px; transform: translateY(-50%); width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); z-index: 1000;">
+    <div id="joystickKnob" style="position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.5); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); touch-action: none;"></div>
+  </div>
+  
+  <!-- 右侧按钮区域 -->
+  <div style="position: fixed; top: 50%; right: 60px; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 1000;">
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button id="rotateCCWBtn" style="width: 65px; height: 65px; border-radius: 50%; background: rgba(100,100,255,0.8); border: 3px solid rgba(255,255,255,0.6); font-size: 22px; color: white; touch-action: manipulation;">↶</button>
+      <button id="rotate180Btn" style="width: 65px; height: 65px; border-radius: 50%; background: rgba(150,100,255,0.8); border: 3px solid rgba(255,255,255,0.6); font-size: 18px; color: white; touch-action: manipulation; font-weight: bold;">180°</button>
+      <button id="rotateCWBtn" style="width: 65px; height: 65px; border-radius: 50%; background: rgba(100,100,255,0.8); border: 3px solid rgba(255,255,255,0.6); font-size: 22px; color: white; touch-action: manipulation;">↷</button>
+    </div>
+    
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button id="holdBtn" style="width: 100px; height: 65px; border-radius: 35px; background: rgba(255,200,0,0.8); border: 3px solid rgba(255,255,255,0.6); font-size: 16px; color: white; font-weight: bold; touch-action: manipulation;">HOLD</button>
+      <button id="hardDropBtn" style="width: 100px; height: 65px; border-radius: 35px; background: rgba(255,100,100,0.8); border: 3px solid rgba(255,255,255,0.6); font-size: 24px; color: white; touch-action: manipulation;">⬇ DROP</button>
+    </div>
+  </div>
+</div>
+
+<!-- 加载模块化的JavaScript文件 -->
+<script src="js/constants.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/game-engine.js"></script>
+<script src="js/renderer.js"></script>
+
+<!-- 主游戏逻辑 -->
+<script>
+/**
+ * Zhoumetry - Main Game Controller
+ * 主游戏控制器 - 整合所有模块
+ * 
+ * 注：LEVELS 对象已在 js/levels.js 中定义，包含所有54个关卡
+ */
+
+// 游戏主控制器
+class Game {
+  constructor() {
+    this.engine = new GameEngine();
+    this.renderer = new Renderer();
+    this.currentLevel = 1;
+    this.currentLevelData = null;
+    this.unlockedLevels = 1;
+    this.unlockedChapters = 1;
+    this.autoNextLevel = false;
+    this.isDailyChallenge = false;
+    this.returnLevel = 1;
+    
+    // 设置
+    this.keyDelay = 100;
+    this.softDropSpeed = 100;
+    this.keyBindings = {...DEFAULT_KEY_BINDINGS};
+    this.waitingForKey = null;
+    
+    // 按键状态
+    this.keyState = {
+      left: { pressed: false, lastTime: 0, interval: null },
+      right: { pressed: false, lastTime: 0, interval: null },
+      down: { pressed: false, lastTime: 0, interval: null },
+      up: { lastTime: 0 }
+    };
+    
+    // 设置引擎回调
+    this.setupEngineCallbacks();
+  }
+
+  setupEngineCallbacks() {
+    this.engine.onUpdate = (state, stats) => {
+      this.renderer.drawBoard(state);
+      const ghostY = this.engine.calculateGhostY();
+      this.renderer.drawGhost(state, ghostY);
+      this.renderer.drawSide(state);
+      this.renderer.updateStats(stats);
+      this.renderer.updateTargetStatus(state);
+    };
+    
+    this.engine.onLevelComplete = () => {
+      this.unlockNextLevel();
+      ui.showLevelComplete();
+    };
+    
+    this.engine.onCombo = (combo) => {
+      this.renderer.showComboEffect(combo);
+    };
+    
+    this.engine.onAllClear = () => {
+      this.renderer.showAllClearEffect();
+    };
+  }
+
+  loadLevel(levelNum) {
+    if (levelNum < 1 || levelNum > CONFIG.MAX_LEVEL) {
+      alert(`Level ${levelNum} does not exist!`);
+      return;
+    }
+    
+    if (levelNum > this.unlockedLevels) {
+      alert(`Level ${levelNum} is locked! Complete previous levels first.`);
+      return;
+    }
+    
+    const levelData = LEVELS[levelNum];
+    if (!levelData) {
+      alert(`Level ${levelNum} not available yet!`);
+      return;
+    }
+    
+    this.currentLevel = levelNum;
+    this.currentLevelData = levelData;
+    
+    // 更新UI
+    const levelName = LEVEL_NAMES[this.currentLevel] || `Level ${this.currentLevel}`;
+    document.getElementById('level-number').textContent = this.currentLevel;
+    document.getElementById('level-info').textContent = levelName;
+    document.getElementById('prevBtn').disabled = this.currentLevel <= 1;
+    document.getElementById('nextBtn').disabled = this.currentLevel >= this.unlockedLevels;
+    
+    // 初始化渲染器
+    this.renderer.initBoard(levelData.width, levelData.height);
+    
+    // 加载关卡数据到引擎
+    this.engine.loadLevelData(levelData);
+    this.engine.triggerUpdate();
+  }
+
+  restartLevel() {
+    if (this.currentLevelData) {
+      this.engine.loadLevelData(this.currentLevelData);
+      this.engine.triggerUpdate();
+    }
+  }
+
+  unlockNextLevel() {
+    if (this.currentLevel >= this.unlockedLevels && this.currentLevel < CONFIG.MAX_LEVEL) {
+      this.unlockedLevels = this.currentLevel + 1;
+      
+      // 检查章节解锁
+      for (const [id, chapter] of Object.entries(CHAPTERS)) {
+        const chapterNum = parseInt(id);
+        const lastLevelInChapter = chapter.levels[chapter.levels.length - 1];
+        
+        if (this.currentLevel === lastLevelInChapter && chapterNum >= this.unlockedChapters) {
+          this.unlockedChapters = chapterNum + 1;
+          break;
+        }
+      }
+      
+      this.saveProgress();
+    }
+  }
+
+  saveProgress() {
+    localStorage.setItem('ZhoumetryLevelProgress', JSON.stringify({
+      unlockedLevels: this.unlockedLevels,
+      unlockedChapters: this.unlockedChapters
+    }));
+  }
+
+  loadProgress() {
+    if (CONFIG.UNLOCK_ALL_LEVELS === 1) {
+      this.unlockedLevels = CONFIG.MAX_LEVEL;
+      this.unlockedChapters = 3;
+      return;
+    }
+    
+    const saved = localStorage.getItem('ZhoumetryLevelProgress');
+    if (saved) {
+      const progress = JSON.parse(saved);
+      this.unlockedLevels = progress.unlockedLevels || 1;
+      this.unlockedChapters = progress.unlockedChapters || 1;
+    }
+    
+    const autoNextSaved = localStorage.getItem('ZhoumetryAutoNext');
+    if (autoNextSaved) {
+      this.autoNextLevel = autoNextSaved === 'true';
+    }
+  }
+
+  saveAutoNextSetting() {
+    this.autoNextLevel = document.getElementById('autoNextLevel').checked;
+    localStorage.setItem('ZhoumetryAutoNext', this.autoNextLevel.toString());
+  }
+
+  resetProgress() {
+    if (confirm('Are you sure you want to reset all progress?')) {
+      this.unlockedLevels = 1;
+      this.unlockedChapters = 1;
+      this.saveProgress();
+      this.loadLevel(1);
+      alert('Progress reset!');
+    }
+  }
+
+  saveSettings() {
+    const bgm = document.getElementById('bgm');
+    localStorage.setItem('ZhoumetrySettings', JSON.stringify({
+      keyDelay: this.keyDelay,
+      softDropSpeed: this.softDropSpeed,
+      keyBindings: this.keyBindings,
+      volume: bgm.volume,
+      bgmSrc: bgm.src
+    }));
+  }
+
+  loadSettings() {
+    const saved = localStorage.getItem('ZhoumetrySettings');
+    if (saved) {
+      const settings = JSON.parse(saved);
+      this.keyDelay = settings.keyDelay || 100;
+      this.softDropSpeed = settings.softDropSpeed || 100;
+      if (settings.keyBindings) {
+        this.keyBindings = settings.keyBindings;
+      }
+      
+      const bgm = document.getElementById('bgm');
+      if (settings.volume !== undefined) {
+        bgm.volume = settings.volume;
+      }
+      if (settings.bgmSrc) {
+        bgm.src = settings.bgmSrc;
+      }
+    }
+  }
+}
+
+// UI控制器
+class UIController {
+  constructor(game) {
+    this.game = game;
+  }
+
+  showLevelComplete() {
+    const overlay = document.getElementById('levelCompleteOverlay');
+    const message = document.getElementById('completeMessage');
+    const nextBtn = document.getElementById('nextLevelBtn');
+    
+    document.getElementById('autoNextLevel').checked = this.game.autoNextLevel;
+    
+    if (this.game.currentLevel < CONFIG.MAX_LEVEL) {
+      message.textContent = `Level ${this.game.currentLevel} Complete!`;
+      nextBtn.style.display = 'inline-block';
+      
+      if (this.game.autoNextLevel) {
+        setTimeout(() => {
+          if (overlay.style.display === 'flex') {
+            this.nextLevelFromComplete();
+          }
+        }, 1000);
+      }
+    } else {
+      message.textContent = '🏆 All Levels Complete!';
+      nextBtn.style.display = 'none';
+    }
+    
+    overlay.style.display = 'flex';
+  }
+
+  hideLevelComplete() {
+    document.getElementById('levelCompleteOverlay').style.display = 'none';
+  }
+
+  nextLevelFromComplete() {
+    this.hideLevelComplete();
+    if (this.game.currentLevel < CONFIG.MAX_LEVEL) {
+      this.game.loadLevel(this.game.currentLevel + 1);
+    }
+  }
+
+  showLevelSelect(chapterId) {
+    const overlay = document.getElementById('levelSelectOverlay');
+    const grid = document.getElementById('levelGrid');
+    
+    grid.innerHTML = '';
+    
+    if (!chapterId) {
+      grid.innerHTML = '<h3 style="grid-column: 1/-1; color: #4a4; margin-bottom: 10px;">Select Chapter</h3>';
+      
+      for (const [id, chapter] of Object.entries(CHAPTERS)) {
+        const chapterNum = parseInt(id);
+        const btn = document.createElement('button');
+        btn.className = 'level-button';
+        btn.style.fontSize = '16px';
+        btn.style.padding = '20px';
+        
+        const chapterLocked = chapterNum > this.game.unlockedChapters;
+        
+        if (chapterLocked) {
+          btn.classList.add('locked');
+          btn.textContent = `🔒 ${chapter.name}`;
+          btn.disabled = true;
+        } else {
+          btn.textContent = chapter.name;
+          btn.onclick = () => this.showLevelSelect(chapterNum);
+        }
+        
+        grid.appendChild(btn);
+      }
+      
+      overlay.style.display = 'flex';
+      return;
+    }
+    
+    const chapter = CHAPTERS[chapterId];
+    if (!chapter) return;
+    
+    for (const levelNum of chapter.levels) {
+      const btn = document.createElement('button');
+      btn.className = 'level-button';
+      const levelName = LEVEL_NAMES[levelNum] || `Level ${levelNum}`;
+      
+      if (levelNum > this.game.unlockedLevels) {
+        btn.classList.add('locked');
+        btn.textContent = `${levelNum}. 🔒 ${levelName}`;
+        btn.disabled = true;
+      } else {
+        if (levelNum === this.game.currentLevel) btn.classList.add('current');
+        btn.textContent = `${levelNum}. ${levelName}`;
+        btn.onclick = () => {
+          this.game.loadLevel(levelNum);
+          this.hideLevelSelect();
+        };
+      }
+      
+      grid.appendChild(btn);
+    }
+    
+    overlay.style.display = 'flex';
+  }
+
+  hideLevelSelect() {
+    document.getElementById('levelSelectOverlay').style.display = 'none';
+  }
+
+  showSettings() {
+    document.getElementById('settingsOverlay').style.display = 'flex';
+    const bgm = document.getElementById('bgm');
+    document.getElementById('volumeSlider').value = Math.round(bgm.volume * 100);
+    document.getElementById('dasSlider').value = this.game.keyDelay;
+    document.getElementById('softDropSlider').value = this.game.softDropSpeed;
+    this.updateVolumeDisplay();
+    this.updateDASDisplay();
+    this.updateSoftDropDisplay();
+    this.updateKeybindingDisplay();
+  }
+
+  hideSettings() {
+    this.game.keyDelay = parseInt(document.getElementById('dasSlider').value);
+    this.game.softDropSpeed = parseInt(document.getElementById('softDropSlider').value);
+    document.getElementById('settingsOverlay').style.display = 'none';
+    this.game.saveSettings();
+  }
+
+  updateVolumeDisplay() {
+    const value = parseInt(document.getElementById('volumeSlider').value);
+    document.getElementById('volumeValue').textContent = value;
+    document.getElementById('bgm').volume = value / 100;
+    this.game.saveSettings();
+  }
+
+  updateDASDisplay() {
+    const value = parseInt(document.getElementById('dasSlider').value);
+    document.getElementById('dasValue').textContent = value === 0 ? 'Instant' : value;
+    this.game.keyDelay = value;
+    this.game.saveSettings();
+  }
+
+  updateSoftDropDisplay() {
+    const value = parseInt(document.getElementById('softDropSlider').value);
+    document.getElementById('softDropValue').textContent = value === 0 ? 'Instant' : value;
+    this.game.softDropSpeed = value;
+    this.game.saveSettings();
+  }
+
+  changeBGM() {
+    const bgm = document.getElementById('bgm');
+    const select = document.getElementById('bgmSelect');
+    bgm.src = select.value;
+    bgm.play();
+    this.game.saveSettings();
+  }
+
+  updateKeybindingDisplay() {
+    document.getElementById('keyLeft').textContent = this.game.keyBindings.left;
+    document.getElementById('keyRight').textContent = this.game.keyBindings.right;
+    document.getElementById('keyRotateCW').textContent = this.game.keyBindings.rotateCW;
+    document.getElementById('keyRotateCCW').textContent = this.game.keyBindings.rotateCCW;
+    document.getElementById('keyRotate180').textContent = this.game.keyBindings.rotate180;
+    document.getElementById('keySoftDrop').textContent = this.game.keyBindings.softDrop;
+    document.getElementById('keyHardDrop').textContent = this.game.keyBindings.hardDrop === ' ' ? 'Space' : this.game.keyBindings.hardDrop;
+    document.getElementById('keyHold').textContent = this.game.keyBindings.hold;
+  }
+
+  rebindKey(action) {
+    this.game.waitingForKey = action;
+    const btn = document.getElementById(`key${action.charAt(0).toUpperCase() + action.slice(1)}`);
+    btn.textContent = 'Press any key...';
+    btn.style.background = '#f90';
+  }
+
+  resetKeybindings() {
+    this.game.keyBindings = {...DEFAULT_KEY_BINDINGS};
+    this.game.keyDelay = 100;
+    this.game.softDropSpeed = 100;
+    this.updateKeybindingDisplay();
+    document.getElementById('dasSlider').value = 100;
+    document.getElementById('softDropSlider').value = 100;
+    this.updateDASDisplay();
+    this.updateSoftDropDisplay();
+    this.game.saveSettings();
+  }
+}
+
+// 输入处理器
+class InputHandler {
+  constructor(game) {
+    this.game = game;
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    window.addEventListener('keydown', (e) => this.handleKeyDown(e));
+    window.addEventListener('keyup', (e) => this.handleKeyUp(e));
+  }
+
+  matchKey(eventKey, bindingKey) {
+    return bindingKey === eventKey || bindingKey.toLowerCase() === eventKey.toLowerCase();
+  }
+
+  handleKeyDown(e) {
+    // 键位重绑定
+    if (this.game.waitingForKey) {
+      e.preventDefault();
+      this.game.keyBindings[this.game.waitingForKey] = e.key;
+      ui.updateKeybindingDisplay();
+      const btn = document.getElementById(`key${this.game.waitingForKey.charAt(0).toUpperCase() + this.game.waitingForKey.slice(1)}`);
+      btn.style.background = '#333';
+      this.game.waitingForKey = null;
+      this.game.saveSettings();
+      return;
+    }
+    
+    const state = this.game.engine.getState();
+    if (!state.curr || !state.gameActive || state.isHoldInProgress) return;
+    
+    const currentTime = Date.now();
+    const ks = this.game.keyState;
+    const kb = this.game.keyBindings;
+    
+    // 左移
+    if (this.matchKey(e.key, kb.left)) {
+      e.preventDefault();
+      if (!ks.left.pressed && currentTime - ks.left.lastTime > CONFIG.KEY_THRESHOLD) {
+        ks.left.pressed = true;
+        ks.left.lastTime = currentTime;
+        
+        if (this.game.keyDelay === 0) {
+          this.game.engine.moveToEdge(-1);
+          ks.left.pressed = false;
+        } else {
+          this.game.engine.tryMove(-1);
+          ks.left.interval = setInterval(() => {
+            if (ks.left.pressed) this.game.engine.tryMove(-1);
+          }, this.game.keyDelay);
+        }
+      }
+    }
+    
+    // 右移
+    if (this.matchKey(e.key, kb.right)) {
+      e.preventDefault();
+      if (!ks.right.pressed && currentTime - ks.right.lastTime > CONFIG.KEY_THRESHOLD) {
+        ks.right.pressed = true;
+        ks.right.lastTime = currentTime;
+        
+        if (this.game.keyDelay === 0) {
+          this.game.engine.moveToEdge(1);
+          ks.right.pressed = false;
+        } else {
+          this.game.engine.tryMove(1);
+          ks.right.interval = setInterval(() => {
+            if (ks.right.pressed) this.game.engine.tryMove(1);
+          }, this.game.keyDelay);
+        }
+      }
+    }
+    
+    // 旋转
+    if (this.matchKey(e.key, kb.rotateCW)) {
+      if (currentTime - ks.up.lastTime > CONFIG.KEY_THRESHOLD) {
+        ks.up.lastTime = currentTime;
+        this.game.engine.tryRotateCW();
+      }
+    }
+    
+    if (this.matchKey(e.key, kb.rotateCCW)) {
+      if (currentTime - ks.up.lastTime > CONFIG.KEY_THRESHOLD) {
+        ks.up.lastTime = currentTime;
+        this.game.engine.tryRotateCCW();
+      }
+    }
+    
+    if (this.matchKey(e.key, kb.rotate180)) {
+      if (currentTime - ks.up.lastTime > CONFIG.KEY_THRESHOLD) {
+        ks.up.lastTime = currentTime;
+        this.game.engine.tryRotate180();
+      }
+    }
+    
+    // 软降
+    if (this.matchKey(e.key, kb.softDrop)) {
+      if (!ks.down.pressed && currentTime - ks.down.lastTime > CONFIG.KEY_THRESHOLD) {
+        ks.down.pressed = true;
+        ks.down.lastTime = currentTime;
+        
+        if (this.game.softDropSpeed === 0) {
+          this.game.engine.dropToBottom();
+          ks.down.pressed = false;
+        } else {
+          this.game.engine.softDrop();
+          ks.down.interval = setInterval(() => {
+            if (ks.down.pressed) this.game.engine.softDrop();
+          }, this.game.softDropSpeed);
+        }
+      }
+    }
+    
+    // 硬降
+    if (this.matchKey(e.key, kb.hardDrop)) {
+      e.preventDefault();
+      if (currentTime - ks.down.lastTime > CONFIG.KEY_THRESHOLD) {
+        ks.down.lastTime = currentTime;
+        this.game.engine.hardDrop();
+      }
+    }
+    
+    // Hold
+    if (this.matchKey(e.key, kb.hold)) {
+      if (currentTime - ks.up.lastTime > CONFIG.KEY_THRESHOLD) {
+        ks.up.lastTime = currentTime;
+        this.game.engine.doHold();
+      }
+    }
+  }
+
+  handleKeyUp(e) {
+    const kb = this.game.keyBindings;
+    const ks = this.game.keyState;
+    
+    if (this.matchKey(e.key, kb.left)) {
+      ks.left.pressed = false;
+      if (ks.left.interval) {
+        clearInterval(ks.left.interval);
+        ks.left.interval = null;
+      }
+    }
+    
+    if (this.matchKey(e.key, kb.right)) {
+      ks.right.pressed = false;
+      if (ks.right.interval) {
+        clearInterval(ks.right.interval);
+        ks.right.interval = null;
+      }
+    }
+    
+    if (this.matchKey(e.key, kb.softDrop)) {
+      ks.down.pressed = false;
+      if (ks.down.interval) {
+        clearInterval(ks.down.interval);
+        ks.down.interval = null;
+      }
+    }
+  }
+}
+
+// 初始化游戏
+let game, ui, inputHandler;
+
+window.onload = () => {
+  game = new Game();
+  ui = new UIController(game);
+  inputHandler = new InputHandler(game);
+  
+  // 加载设置和存档
+  game.loadSettings();
+  game.loadProgress();
+  
+  // 设置背景音乐
+  const bgm = document.getElementById('bgm');
+  bgm.volume = 0.3;
+  bgm.play().catch(() => {
+    document.addEventListener('click', () => bgm.play(), { once: true });
+  });
+  
+  // 加载第一关
+  game.loadLevel(1);
+  
+  console.log('Zhoumetry (Refactored) loaded successfully!');
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,89 @@
+{
+  "width": 5,
+  "height": 7,
+  "board": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      "gray",
+      "gray",
+      "gray",
+      0,
+      0
+    ],
+    [
+      "gray",
+      "gray",
+      0,
+      0,
+      "gray"
+    ]
+  ],
+  "targetMap": [
+    null,
+    null,
+    null,
+    null,
+    [
+      null,
+      false,
+      false,
+      false
+    ],
+    [
+      null,
+      null,
+      false,
+      true,
+      true
+    ],
+    [
+      null,
+      null,
+      true,
+      true
+    ]
+  ],
+  "currentPiece": "S",
+  "currentRotation": 0,
+  "currentX": 1,
+  "currentY": 0,
+  "hold": null,
+  "nextQueue": [],
+  "canHold": true,
+  "gameActive": true,
+  "autoRefillNext": false
+}
